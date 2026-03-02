@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <base target="_top">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SISOLAH - Sistem Informasi SAKIP Online</title>
@@ -65,7 +64,6 @@
           </a>
 
           <!-- Auth Required Menus (Hidden by default) -->
-          <!-- Added 'flex' class to all hidden items below to ensure proper vertical stacking when shown -->
           <a onclick="showTab('tab-upload');" id="menu-upload" class="hidden flex items-center gap-4 px-4 py-3 hover:bg-stone-700 cursor-pointer border-l-4 border-transparent hover:border-orange-500 transition-colors">
              <i class="fas fa-upload w-6 text-center"></i>
              <span class="nav-text text-sm font-medium">Upload Eviden</span>
@@ -482,6 +480,13 @@
 
     <!-- SCRIPT -->
     <script>
+      // ==========================================
+      // URL BACKEND GOOGLE APPS SCRIPT ANDA
+      // ==========================================
+      // GANTI TEKS DI BAWAH INI DENGAN URL WEB APP DARI LANGKAH 2
+      const GAS_WEB_APP_URL = "URL_GAS_ANDA_DISINI"; 
+      // ==========================================
+
       let currentUser = null, currentRole = null;
       let globalEvidenData = [];
       let charts = {};
@@ -493,7 +498,30 @@
       // Fungsi Penanganan Error Global
       function handleSystemError(err) {
           setLoading(false);
-          alert("Kesalahan Sistem: " + err.message + "\n\nPastikan Anda telah melakukan Deploy -> New Version terbaru!");
+          alert("Kesalahan Sistem: " + err.message + "\n\nPastikan URL GAS_WEB_APP_URL sudah benar!");
+      }
+
+      // ------------------------------------------------------------------
+      // PENGGANTI google.script.run UNTUK KOMUNIKASI API (FETCH)
+      // ------------------------------------------------------------------
+      async function callBackendAPI(actionName, dataPayload = {}) {
+        if (GAS_WEB_APP_URL === "URL_GAS_ANDA_DISINI") {
+            throw new Error("URL Web App Google Apps Script belum disetel di kode index.html");
+        }
+        
+        try {
+            const response = await fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                // Menggunakan text/plain agar Google Apps Script tidak memblokir (CORS) request preflight
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: actionName, data: dataPayload })
+            });
+
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            throw new Error("Koneksi API Gagal: " + error.message);
+        }
       }
 
       // --- SIDEBAR TOGGLE ---
@@ -581,66 +609,66 @@
         const u = document.getElementById('login-user').value;
         const p = document.getElementById('login-pass').value;
         setLoading(true);
-        google.script.run
-        .withSuccessHandler(res => {
-          setLoading(false);
-          if (res.status === 'success') {
-            currentUser = res.username; currentRole = res.role;
-            
-            // Update Sidebar Info
-            document.getElementById('sb-nama').innerText = res.nama;
-            document.getElementById('sb-role').innerText = res.role;
-            document.getElementById('sidebar-user-info').classList.remove('hidden');
-            
-            // Toggle Menus based on Role
-            document.getElementById('menu-login').classList.add('hidden');
-            document.getElementById('btn-logout-sb').classList.remove('hidden');
-            document.getElementById('top-actions').classList.remove('hidden');
-            document.getElementById('panel-masuk-container').classList.remove('hidden');
 
-            document.getElementById('menu-profile').classList.remove('hidden');
-            document.getElementById('menu-review').classList.remove('hidden'); // Available for all
+        callBackendAPI('loginUser', { username: u, password: p })
+          .then(res => {
+              setLoading(false);
+              if (res.status === 'success') {
+                currentUser = res.username; currentRole = res.role;
+                
+                // Update Sidebar Info
+                document.getElementById('sb-nama').innerText = res.nama;
+                document.getElementById('sb-role').innerText = res.role;
+                document.getElementById('sidebar-user-info').classList.remove('hidden');
+                
+                // Toggle Menus based on Role
+                document.getElementById('menu-login').classList.add('hidden');
+                document.getElementById('btn-logout-sb').classList.remove('hidden');
+                document.getElementById('top-actions').classList.remove('hidden');
+                document.getElementById('panel-masuk-container').classList.remove('hidden');
 
-            // ROLE: Superadmin
-            if(res.role === 'superadmin') {
-               document.getElementById('menu-upload').classList.remove('hidden');
-               document.getElementById('menu-request').classList.remove('hidden');
-               document.getElementById('menu-data').classList.remove('hidden');
-               document.getElementById('menu-wa').classList.remove('hidden');
-            }
-            // ROLE: Pimpinan
-            else if(res.role === 'pimpinan') {
-               // Only Review & Profile
-            }
-            // ROLE: Operator (Includes Admin Rendatin/Operator Rendatin)
-            else {
-               document.getElementById('menu-data').classList.remove('hidden');
-               // Set auto filter upload form
-               const subSelect = document.getElementById('input-subbagian');
-               document.getElementById('input-uploader').value = res.username;
-               
-               if(res.role.includes('kul')) subSelect.value = 'kul';
-               else if(res.role.includes('sdm')) subSelect.value = 'sdm_parmas';
-               else if(res.role.includes('tek')) subSelect.value = 'tekhum';
-               else if(res.role.includes('rendatin')) subSelect.value = 'rendatin';
-            }
+                document.getElementById('menu-profile').classList.remove('hidden');
+                document.getElementById('menu-review').classList.remove('hidden'); // Available for all
 
-            // HIDE FILTER SUB BAGIAN IF OPERATOR
-            const filterContainer = document.getElementById('filter-subbag-container');
-            const dataFilterContainer = document.getElementById('filter-data-subbag-container');
-            if(res.role.includes('operator')) {
-               filterContainer.classList.add('hidden');
-               if(dataFilterContainer) dataFilterContainer.classList.add('hidden');
-            } else {
-               filterContainer.classList.remove('hidden');
-               if(dataFilterContainer) dataFilterContainer.classList.remove('hidden');
-            }
+                // ROLE: Superadmin
+                if(res.role === 'superadmin') {
+                   document.getElementById('menu-upload').classList.remove('hidden');
+                   document.getElementById('menu-request').classList.remove('hidden');
+                   document.getElementById('menu-data').classList.remove('hidden');
+                   document.getElementById('menu-wa').classList.remove('hidden');
+                }
+                // ROLE: Pimpinan
+                else if(res.role === 'pimpinan') {
+                   // Only Review & Profile
+                }
+                // ROLE: Operator
+                else {
+                   document.getElementById('menu-data').classList.remove('hidden');
+                   // Set auto filter upload form
+                   const subSelect = document.getElementById('input-subbagian');
+                   document.getElementById('input-uploader').value = res.username;
+                   
+                   if(res.role.includes('kul')) subSelect.value = 'kul';
+                   else if(res.role.includes('sdm')) subSelect.value = 'sdm_parmas';
+                   else if(res.role.includes('tek')) subSelect.value = 'tekhum';
+                   else if(res.role.includes('rendatin')) subSelect.value = 'rendatin';
+                }
 
-            showPage('page-home');
-          } else alert(res.message);
-        })
-        .withFailureHandler(handleSystemError)
-        .loginUser(u, p);
+                // HIDE FILTER SUB BAGIAN IF OPERATOR
+                const filterContainer = document.getElementById('filter-subbag-container');
+                const dataFilterContainer = document.getElementById('filter-data-subbag-container');
+                if(res.role.includes('operator')) {
+                   filterContainer.classList.add('hidden');
+                   if(dataFilterContainer) dataFilterContainer.classList.add('hidden');
+                } else {
+                   filterContainer.classList.remove('hidden');
+                   if(dataFilterContainer) dataFilterContainer.classList.remove('hidden');
+                }
+
+                showPage('page-home');
+              } else alert(res.message);
+          })
+          .catch(handleSystemError);
       }
 
       function logout() {
@@ -667,17 +695,16 @@
       function loadGlobalData() {
         if(!currentRole) return;
         setLoading(true);
-        google.script.run
-        .withSuccessHandler(rows => {
-          setLoading(false);
-          globalEvidenData = rows || [];
-          
-          if(!document.getElementById('tab-review').classList.contains('hidden')) renderReviewCards();
-          if(!document.getElementById('tab-data').classList.contains('hidden')) renderTableData();
-          
-        })
-        .withFailureHandler(handleSystemError)
-        .getEvidenData(currentRole);
+
+        callBackendAPI('getEvidenData', { role: currentRole })
+          .then(rows => {
+              setLoading(false);
+              globalEvidenData = rows || [];
+              
+              if(!document.getElementById('tab-review').classList.contains('hidden')) renderReviewCards();
+              if(!document.getElementById('tab-data').classList.contains('hidden')) renderTableData();
+          })
+          .catch(handleSystemError);
       }
 
       // --- RENDERING TAB REVIEW ---
@@ -869,13 +896,21 @@
          }
 
          setLoading(true);
-         google.script.run
-         .withSuccessHandler(res => {
-            alert(res.message);
-            loadGlobalData(); 
-         })
-         .withFailureHandler(handleSystemError)
-         .reviewEvidence(rowId, actionType, komentar, currentUser, currentRole);
+         
+         const payload = {
+             rowId: rowId, 
+             action: actionType, 
+             komentar: komentar, 
+             reviewerName: currentUser, 
+             reviewerRole: currentRole
+         };
+
+         callBackendAPI('reviewEvidence', payload)
+           .then(res => {
+              alert(res.message);
+              loadGlobalData(); 
+           })
+           .catch(handleSystemError);
       }
 
       // --- RENDERING TAB DATA (TABEL BIASA) ---
@@ -990,20 +1025,25 @@
           formObject.tahun_sakip = document.getElementById('input-tahun').value;
           formObject.sub_bagian = document.getElementById('input-subbagian').value;
 
+          const fileData = { 
+              filename: file.name, 
+              mimeType: file.type, 
+              bytes: ev.target.result.split(',')[1] 
+          };
+
           setLoading(true);
-          google.script.run
-          .withSuccessHandler(res => {
-            alert(res.message);
-            document.getElementById('form-upload').reset();
-            document.getElementById('upload-instruction').classList.add('hidden');
-            document.getElementById('input-tahun').disabled = false;
-            document.getElementById('input-subbagian').disabled = false;
-            document.getElementById('input-nama-eviden').readOnly = false;
-            loadGlobalData();
-            showTab('tab-data');
-          })
-          .withFailureHandler(handleSystemError)
-          .uploadEvidence(formObject, { filename: file.name, mimeType: file.type, bytes: ev.target.result.split(',')[1] }, currentRole);
+          callBackendAPI('uploadEvidence', { formObject: formObject, fileData: fileData, userRole: currentRole })
+            .then(res => {
+              alert(res.message);
+              document.getElementById('form-upload').reset();
+              document.getElementById('upload-instruction').classList.add('hidden');
+              document.getElementById('input-tahun').disabled = false;
+              document.getElementById('input-subbagian').disabled = false;
+              document.getElementById('input-nama-eviden').readOnly = false;
+              loadGlobalData();
+              showTab('tab-data');
+            })
+            .catch(handleSystemError);
         };
         reader.readAsDataURL(file);
       }
@@ -1012,12 +1052,14 @@
         e.preventDefault();
         const formObj = Object.fromEntries(new FormData(e.target).entries());
         setLoading(true);
-        google.script.run
-        .withSuccessHandler(res => {
-           alert(res.message); e.target.reset(); loadGlobalData();
-        })
-        .withFailureHandler(handleSystemError)
-        .requestEvidence(formObj);
+
+        callBackendAPI('requestEvidence', { formObject: formObj })
+          .then(res => {
+             alert(res.message); 
+             e.target.reset(); 
+             loadGlobalData();
+          })
+          .catch(handleSystemError);
       }
 
       // --- WHATSAPP NOTIFICATIONS ---
@@ -1029,16 +1071,15 @@
          if (!confirm('Anda yakin ingin mengirim pesan WhatsApp ini secara manual?')) return;
 
          setLoading(true);
-         google.script.run
-         .withSuccessHandler(res => {
-             setLoading(false);
-             alert(res.message);
-             if (res.status === 'success') {
-                 document.getElementById('form-wa').reset();
-             }
-         })
-         .withFailureHandler(handleSystemError)
-         .sendManualWA(target, message);
+         callBackendAPI('sendManualWA', { targetSub: target, message: message })
+           .then(res => {
+               setLoading(false);
+               alert(res.message);
+               if (res.status === 'success') {
+                   document.getElementById('form-wa').reset();
+               }
+           })
+           .catch(handleSystemError);
       }
 
       function handleSendProgressWA(subbagian) {
@@ -1048,49 +1089,47 @@
          if (!confirm(`Kirim Laporan Progres SAKIP Tahun ${year} ke WhatsApp operator Sub Bagian ${subName}?`)) return;
 
          setLoading(true);
-         google.script.run
-         .withSuccessHandler(res => {
-             setLoading(false);
-             alert(res.message);
-         })
-         .withFailureHandler(handleSystemError)
-         .sendProgressReportWA(subbagian, year);
+         callBackendAPI('sendProgressReportWA', { targetSub: subbagian, year: year })
+           .then(res => {
+               setLoading(false);
+               alert(res.message);
+           })
+           .catch(handleSystemError);
       }
 
       // --- DASHBOARD CHARTS ---
       function loadDashboard() {
         const year = document.getElementById('filter-tahun').value;
-        google.script.run
-        .withSuccessHandler(data => {
-          document.getElementById('stat-verified').innerText = data.overall.verified;
-          document.getElementById('stat-uploaded').innerText = data.overall.uploaded;
-          document.getElementById('stat-missing').innerText = data.overall.missing;
-          
-          if(charts['chartOverall']) charts['chartOverall'].destroy();
-          charts['chartOverall'] = new Chart(document.getElementById('chartOverall').getContext('2d'), {
-             type: 'bar', data: { labels: ['Verified', 'Proses', 'Belum/Tolak'], datasets: [{ label: 'Keseluruhan', data: [data.overall.verified, data.overall.uploaded, data.overall.missing], backgroundColor: ['#16a34a', '#eab308', '#dc2626'] }] }, options: { responsive:true, maintainAspectRatio:false }
-          });
+        
+        callBackendAPI('getDashboardData', { selectedYear: year })
+          .then(data => {
+            document.getElementById('stat-verified').innerText = data.overall.verified;
+            document.getElementById('stat-uploaded').innerText = data.overall.uploaded;
+            document.getElementById('stat-missing').innerText = data.overall.missing;
+            
+            if(charts['chartOverall']) charts['chartOverall'].destroy();
+            charts['chartOverall'] = new Chart(document.getElementById('chartOverall').getContext('2d'), {
+               type: 'bar', data: { labels: ['Verified', 'Proses', 'Belum/Tolak'], datasets: [{ label: 'Keseluruhan', data: [data.overall.verified, data.overall.uploaded, data.overall.missing], backgroundColor: ['#16a34a', '#eab308', '#dc2626'] }] }, options: { responsive:true, maintainAspectRatio:false }
+            });
 
-          const drawDonut = (id, subData) => {
-             if(charts[id]) charts[id].destroy();
-             charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                   labels: ['Verified', 'Proses', 'Belum'],
-                   datasets: [{ data: [subData.verified, subData.uploaded, subData.missing], backgroundColor: ['#16a34a', '#eab308', '#dc2626'] }]
-                },
-                options: { responsive:true, maintainAspectRatio:false, plugins: { legend: { position: 'right', labels: { boxWidth:10, font:{size:10} } } } }
-             });
-          };
+            const drawDonut = (id, subData) => {
+               if(charts[id]) charts[id].destroy();
+               charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
+                  type: 'doughnut',
+                  data: {
+                     labels: ['Verified', 'Proses', 'Belum'],
+                     datasets: [{ data: [subData.verified, subData.uploaded, subData.missing], backgroundColor: ['#16a34a', '#eab308', '#dc2626'] }]
+                  },
+                  options: { responsive:true, maintainAspectRatio:false, plugins: { legend: { position: 'right', labels: { boxWidth:10, font:{size:10} } } } }
+               });
+            };
 
-          drawDonut('chartRendatin', data.breakdown.RENDATIN);
-          drawDonut('chartSDM', data.breakdown.SDM_PARMAS);
-          drawDonut('chartKUL', data.breakdown.KUL);
-          drawDonut('chartTekhum', data.breakdown.TEKHUM);
-
-        })
-        .withFailureHandler(handleSystemError)
-        .getDashboardData(year);
+            drawDonut('chartRendatin', data.breakdown.RENDATIN);
+            drawDonut('chartSDM', data.breakdown.SDM_PARMAS);
+            drawDonut('chartKUL', data.breakdown.KUL);
+            drawDonut('chartTekhum', data.breakdown.TEKHUM);
+          })
+          .catch(handleSystemError);
       }
 
       // --- AKUN ---
@@ -1098,42 +1137,44 @@
         const p = document.getElementById('new-password').value;
         if(!p) return;
         setLoading(true); 
-        google.script.run
-        .withSuccessHandler(res => { setLoading(false); alert(res.message); })
-        .withFailureHandler(handleSystemError)
-        .changePassword(currentUser, p);
+
+        callBackendAPI('changePassword', { username: currentUser, newPass: p })
+          .then(res => { 
+              setLoading(false); 
+              alert(res.message); 
+          })
+          .catch(handleSystemError);
       }
       
       // USER MANAGEMENT (SUPERADMIN ONLY)
       function loadUsers() {
-        google.script.run
-        .withSuccessHandler(users => {
-          const tbody = document.getElementById('user-table-body'); 
-          tbody.innerHTML = '';
-          users.forEach(u => {
-             // Encode data agar aman dipassing ke fungsi
-             const safeUser = JSON.stringify(u).replace(/"/g, '&quot;'); 
-             
-             let editBtn = '';
-             // Hanya superadmin yang dapat edit
-             if(currentRole === 'superadmin') {
-                editBtn = `<button onclick="openUserModal('update', ${safeUser})" class="text-blue-600 hover:text-blue-800"><i class="fas fa-edit"></i></button>`;
-             }
-             
-             tbody.innerHTML += `
-               <tr class="border-b">
-                 <td class="p-2">${u[0]}</td>
-                 <td class="p-2">${u[2]}</td>
-                 <td class="p-2">${u[4]}</td>
-                 <td class="p-2 flex gap-2">
-                    ${editBtn}
-                    <button onclick="deleteUser('${u[0]}')" class="text-red-600 hover:text-red-800"><i class="fa fa-trash"></i></button>
-                 </td>
-               </tr>`;
-          });
-        })
-        .withFailureHandler(handleSystemError)
-        .getAllUsers();
+        callBackendAPI('getAllUsers', {})
+          .then(users => {
+            const tbody = document.getElementById('user-table-body'); 
+            tbody.innerHTML = '';
+            users.forEach(u => {
+               // Encode data agar aman dipassing ke fungsi
+               const safeUser = JSON.stringify(u).replace(/"/g, '&quot;'); 
+               
+               let editBtn = '';
+               // Hanya superadmin yang dapat edit
+               if(currentRole === 'superadmin') {
+                  editBtn = `<button onclick="openUserModal('update', ${safeUser})" class="text-blue-600 hover:text-blue-800"><i class="fas fa-edit"></i></button>`;
+               }
+               
+               tbody.innerHTML += `
+                 <tr class="border-b">
+                   <td class="p-2">${u[0]}</td>
+                   <td class="p-2">${u[2]}</td>
+                   <td class="p-2">${u[4]}</td>
+                   <td class="p-2 flex gap-2">
+                      ${editBtn}
+                      <button onclick="deleteUser('${u[0]}')" class="text-red-600 hover:text-red-800"><i class="fa fa-trash"></i></button>
+                   </td>
+                 </tr>`;
+            });
+          })
+          .catch(handleSystemError);
       }
 
       function openUserModal(mode, data = null) { 
@@ -1170,27 +1211,29 @@
             role:document.getElementById('input-u-role').value
         }; 
         
-        google.script.run
-        .withSuccessHandler(res=>{
-            alert(res.message); 
-            if(res.status === 'success') {
-                document.getElementById('modal-user').classList.add('hidden'); 
-                loadUsers();
-            }
-        })
-        .withFailureHandler(handleSystemError)
-        .manageUser(action, u, oldUser); 
+        setLoading(true);
+        callBackendAPI('manageUser', { actionType: action, userData: u, oldUsername: oldUser })
+          .then(res => {
+              setLoading(false);
+              alert(res.message); 
+              if(res.status === 'success') {
+                  document.getElementById('modal-user').classList.add('hidden'); 
+                  loadUsers();
+              }
+          })
+          .catch(handleSystemError);
       }
 
       function deleteUser(user) { 
         if(confirm('Hapus User ini?')) {
-            google.script.run
-            .withSuccessHandler(res=>{
-                alert(res.message);
-                loadUsers();
-            })
-            .withFailureHandler(handleSystemError)
-            .manageUser('delete', null, user); 
+            setLoading(true);
+            callBackendAPI('manageUser', { actionType: 'delete', userData: null, oldUsername: user })
+              .then(res => {
+                  setLoading(false);
+                  alert(res.message);
+                  loadUsers();
+              })
+              .catch(handleSystemError);
         }
       }
 
@@ -1217,19 +1260,18 @@
         };
         
         setLoading(true);
-        google.script.run
-        .withSuccessHandler(res => {
-          if(res.status === 'success') {
-             alert(res.message);
-             document.getElementById('modal-edit-eviden').classList.add('hidden');
-             loadGlobalData(); // Refresh UI setelah menyimpan
-          } else {
-             setLoading(false);
-             alert(res.message);
-          }
-        })
-        .withFailureHandler(handleSystemError)
-        .updateEvidenceData(id, newData, currentUser);
+        callBackendAPI('updateEvidenceData', { id: id, newData: newData, operator: currentUser })
+          .then(res => {
+              if(res.status === 'success') {
+                 alert(res.message);
+                 document.getElementById('modal-edit-eviden').classList.add('hidden');
+                 loadGlobalData(); // Refresh UI setelah menyimpan
+              } else {
+                 setLoading(false);
+                 alert(res.message);
+              }
+          })
+          .catch(handleSystemError);
       }
 
     </script>
