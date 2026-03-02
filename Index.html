@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISOLAH - Sistem Informasi SAKIP Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+      .hidden { display: none !important; }
+      .loader { border-top-color: #d97706; animation: spinner 1.5s linear infinite; }
+      @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      .bg-kpu-dark { background-color: #292524; } 
+      .text-kpu-orange { color: #ea580c; } 
+      .scroll-history::-webkit-scrollbar { width: 6px; }
+      .scroll-history::-webkit-scrollbar-track { background: #f5f5f4; }
+      .scroll-history::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 10px; }
+      .pulse-animation { animation: pulse 2s infinite; }
+      @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(234, 88, 12, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); } }
+      
+      /* Sidebar specific styles */
+      #sidebar { transition: width 0.3s ease-in-out; }
+      .sidebar-collapsed { width: 5rem !important; } /* w-20 */
+      .sidebar-collapsed .nav-text { display: none; }
+      .sidebar-collapsed .nav-header { display: none; }
+      .sidebar-collapsed .logo-icon { margin: 0 auto; font-size: 1.5rem; }
+    </style>
+  </head>
+  <body class="bg-stone-100 font-sans min-h-screen text-stone-800 flex overflow-hidden">
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside id="sidebar" class="bg-stone-800 text-white w-64 h-screen flex flex-col shadow-2xl z-50 border-r border-orange-700 relative">
+       <!-- Header & Toggle -->
+       <div class="h-16 flex items-center justify-between px-4 border-b border-stone-700 bg-stone-900">
+          <div class="flex items-center gap-3 overflow-hidden">
+             <i class="fas fa-box-open text-orange-500 text-xl logo-icon"></i>
+             <span class="font-bold text-lg nav-header tracking-wide whitespace-nowrap">SISOLAH</span>
+          </div>
+          <button onclick="toggleSidebar()" class="text-stone-400 hover:text-white focus:outline-none">
+             <i class="fas fa-bars"></i>
+          </button>
+       </div>
+
+       <!-- User Info (Compact) -->
+       <div id="sidebar-user-info" class="p-4 border-b border-stone-700 bg-stone-800 hidden">
+           <div class="flex items-center gap-3">
+               <div class="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center text-white font-bold text-xs">
+                   <i class="fas fa-user"></i>
+               </div>
+               <div class="nav-text overflow-hidden">
+                   <p id="sb-nama" class="text-sm font-bold truncate">User</p>
+                   <p id="sb-role" class="text-[10px] text-stone-400 uppercase truncate">Role</p>
+               </div>
+           </div>
+       </div>
+
+       <!-- Menu Items -->
+       <div class="flex-1 overflow-y-auto py-4 space-y-1">
+          <!-- Public -->
+          <a onclick="showPage('page-home')" id="menu-home" class="flex items-center gap-4 px-4 py-3 hover:bg-stone-700 cursor-pointer border-l-4 border-transparent hover:border-orange-500 transition-colors">
+             <i class="fas fa-home w-6 text-center"></i>
+             <span class="nav-text text-sm font-medium">Beranda</span>
+          </a>
+
+          <!-- Auth Required Menus (Hidden by default) -->
+          <!-- Added 'flex' class to all hidden items below to ensure proper vertical stacking when shown -->
+          <a onclick="showTab('tab-upload');" id="menu-upload" class="hidden flex items-center gap-4 px-4 py-3 hover:bg-stone-700 cursor-pointer border-l-4 border-transparent hover:border-orange-500 transition-colors">
+             <i class="fas fa-upload w-6 text-center"></i>
+             <span class="nav-text text-sm font-medium">Upload Eviden</span>
+          </a>
+          
+          <a onclick="showTab('tab-request')" id="menu-request" class="hidden flex items-center gap-4 px-4 py-3 hover:bg-stone-700 cursor-pointer border-l-4 border-transparent hover:border-orange-500 transition-colors">
+             <i class="fas fa-paper-plane w-6 text-center"></i>
+             <span class="nav-text text-sm font-medium">Minta Eviden</span>
+          </a>
+
+          <a onclick="showTab('tab-review')" id="menu-review" class="hidden flex items-center gap-4 px-4 py-3 hover:bg-stone-700 cursor-pointer border-l-4 border-transparent hover:border-orange-500 transition-colors">
+             <i class="fas fa-check-double w-6 text-center"></i>
+             <span class="nav-text text-sm font-medium">Review Eviden</span>
+          </a>
+
+          <a onclick="showTab('tab-data')" id="menu-data" class="hidden flex items-center gap-4 px-4 py-3 hover:bg-stone-700 cursor-pointer border-l-4 border-transparent hover:border-orange-500 transition-colors">
+             <i class="fas fa-table w-6 text-center"></i>
+             <span class="nav-text text-sm font-medium">Data Eviden SAKIP</span>
+          </a>
+          
+          <a onclick="showTab('tab-profile')" id="menu-profile" class="hidden flex items-center gap-4 px-4 py-3 hover:bg-stone-700 cursor-pointer border-l-4 border-transparent hover:border-orange-500 transition-colors">
+             <i class="fas fa-user-cog w-6 text-center"></i>
+             <span class="nav-text text-sm font-medium">Manajemen Akun</span>
+          </a>
+
+          <!-- Menu Notifikasi WA Baru -->
+          <a onclick="showTab('tab-wa')" id="menu-wa" class="hidden flex items-center gap-4 px-4 py-3 hover:bg-stone-700 cursor-pointer border-l-4 border-transparent hover:border-orange-500 transition-colors">
+             <i class="fas fa-whatsapp w-6 text-center text-green-500"></i>
+             <span class="nav-text text-sm font-medium">Kirim Pesan Notifikasi</span>
+          </a>
+
+          <!-- Login Link (When logged out) -->
+          <a onclick="showPage('page-login')" id="menu-login" class="flex items-center gap-4 px-4 py-3 hover:bg-stone-700 cursor-pointer border-l-4 border-transparent hover:border-orange-500 transition-colors">
+             <i class="fas fa-sign-in-alt w-6 text-center"></i>
+             <span class="nav-text text-sm font-medium">Login</span>
+          </a>
+       </div>
+
+       <!-- Footer Actions -->
+       <div class="p-4 border-t border-stone-700 bg-stone-900">
+           <button onclick="logout()" id="btn-logout-sb" class="hidden w-full flex items-center justify-center gap-2 bg-red-700 hover:bg-red-800 text-white py-2 rounded transition-colors text-sm font-bold">
+               <i class="fas fa-sign-out-alt"></i>
+               <span class="nav-text">Logout</span>
+           </button>
+       </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 h-screen overflow-y-auto flex flex-col bg-stone-100 relative">
+      
+      <!-- Topbar for Mobile / Notifications -->
+      <div class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-40">
+         <h2 class="text-lg font-bold text-stone-700 uppercase tracking-wide" id="page-title">Beranda</h2>
+         
+         <div id="top-actions" class="hidden flex items-center gap-4">
+            <!-- Notif -->
+            <div class="relative">
+              <button onclick="document.getElementById('notif-panel').classList.toggle('hidden')" class="relative text-stone-500 hover:text-orange-600 focus:outline-none">
+                 <i class="fas fa-bell text-xl"></i>
+                 <span id="notif-badge" class="hidden absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">0</span>
+              </button>
+              <div id="notif-panel" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                <div class="bg-stone-100 p-2 border-b flex justify-between"><span class="font-bold text-sm text-stone-800">Notifikasi</span></div>
+                <ul id="notif-list-dropdown" class="max-h-64 overflow-y-auto text-sm divide-y divide-gray-100"></ul>
+              </div>
+            </div>
+         </div>
+      </div>
+
+      <!-- Content Container -->
+      <div class="p-4 md:p-6 flex-1">
+          <!-- LOADING -->
+          <div id="loading" class="hidden fixed inset-0 bg-stone-900 bg-opacity-60 flex justify-center items-center z-[60]">
+            <div class="loader rounded-full border-4 border-t-4 border-stone-200 h-12 w-12"></div>
+          </div>
+
+          <!-- PAGE: HOME -->
+          <div id="page-home" class="page-section">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-6 rounded-lg shadow-md border-l-4 border-orange-600">
+              <div>
+                <h2 class="text-2xl font-bold text-stone-800">SISOLAH</h2>
+                <p class="text-stone-600 text-sm font-medium mb-2">Sistem Informasi SAKIP Online</p>
+                <div id="panel-masuk-container" class="hidden mt-4">
+                   <p class="text-sm text-green-600 font-bold"><i class="fas fa-check-circle"></i> Anda telah login.</p>
+                </div>
+              </div>
+              <div class="mt-4 md:mt-0 flex items-center gap-2">
+                 <label class="font-bold text-stone-700">Tahun:</label>
+                 <select id="filter-tahun" onchange="loadDashboard()" class="border p-2 rounded bg-stone-50 font-semibold">
+                   <option value="2024" selected>2024</option><option value="2025">2025</option><option value="2026">2026</option>
+                 </select>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              <div class="bg-white p-4 rounded text-center border-t-4 border-green-600 shadow-sm"><h3 class="text-stone-600 text-xs font-bold uppercase">Terverifikasi</h3><p id="stat-verified" class="text-2xl font-bold text-green-600">0</p></div>
+              <div class="bg-white p-4 rounded text-center border-t-4 border-yellow-500 shadow-sm"><h3 class="text-stone-600 text-xs font-bold uppercase">Proses / Sebagian</h3><p id="stat-uploaded" class="text-2xl font-bold text-yellow-500">0</p></div>
+              <div class="bg-white p-4 rounded text-center border-t-4 border-red-500 shadow-sm"><h3 class="text-stone-600 text-xs font-bold uppercase">Belum / Ditolak</h3><p id="stat-missing" class="text-2xl font-bold text-red-600">0</p></div>
+            </div>
+            
+            <div class="grid grid-cols-1 mb-8">
+               <div class="bg-white p-6 rounded shadow-md"><h3 class="font-bold text-stone-700 mb-4 border-b pb-2">Grafik Keseluruhan</h3><div class="h-64 w-full"><canvas id="chartOverall"></canvas></div></div>
+            </div>
+
+            <h3 class="font-bold text-stone-700 mb-4 text-lg border-l-4 border-orange-600 pl-3">Progres Per Sub Bagian</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="bg-white p-4 rounded shadow-md"><h4 class="font-bold text-center text-sm mb-2 text-stone-700">SUB BAGIAN RENDATIN</h4><div class="h-48 flex justify-center"><canvas id="chartRendatin"></canvas></div></div>
+              <div class="bg-white p-4 rounded shadow-md"><h4 class="font-bold text-center text-sm mb-2 text-stone-700">SUB BAGIAN SDM & PARMAS</h4><div class="h-48 flex justify-center"><canvas id="chartSDM"></canvas></div></div>
+              <div class="bg-white p-4 rounded shadow-md"><h4 class="font-bold text-center text-sm mb-2 text-stone-700">SUB BAGIAN KUL</h4><div class="h-48 flex justify-center"><canvas id="chartKUL"></canvas></div></div>
+              <div class="bg-white p-4 rounded shadow-md"><h4 class="font-bold text-center text-sm mb-2 text-stone-700">SUB BAGIAN TEKHUM</h4><div class="h-48 flex justify-center"><canvas id="chartTekhum"></canvas></div></div>
+            </div>
+          </div>
+
+          <!-- PAGE: LOGIN -->
+          <div id="page-login" class="page-section hidden max-w-md mx-auto mt-10">
+            <div class="bg-white rounded-lg shadow-xl p-8 border-t-8 border-orange-600">
+              <div class="text-center mb-6"><i class="fas fa-user-circle text-6xl text-stone-300"></i><h2 class="text-2xl font-bold mt-2">Login</h2></div>
+              <form onsubmit="handleLogin(event)" id="form-login-el">
+                <input type="text" id="login-user" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Username" required>
+                <input type="password" id="login-pass" class="w-full mb-6 px-3 py-2 border rounded" placeholder="Password" required>
+                <button type="submit" class="w-full bg-stone-800 text-white font-bold py-2 rounded hover:bg-stone-900 shadow">Masuk</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- PAGE WRAPPER: ADMIN TABS -->
+          <!-- Disatukan dalam div agar logika hidden/show mudah -->
+          <div id="page-admin-wrapper">
+              
+            <!-- TAB: UPLOAD -->
+            <div id="tab-upload" class="tab-content hidden bg-white p-6 rounded shadow-md border-t-4 border-orange-600">
+              <h3 class="text-xl font-bold mb-4 border-b pb-2">Formulir Eviden</h3>
+              <div id="upload-instruction" class="hidden mb-4 p-3 bg-blue-50 text-blue-800 rounded text-sm border border-blue-200">
+                <div><i class="fas fa-info-circle"></i> Silakan upload revisi/file baru untuk eviden: <span id="upload-target-name" class="font-bold"></span></div>
+                <div id="upload-deadline-info" class="hidden mt-2 text-red-600 font-bold text-xs"><i class="fas fa-exclamation-circle"></i> Batas Waktu (Deadline): <span id="upload-target-deadline"></span></div>
+              </div>
+              <form id="form-upload" onsubmit="handleUpload(event)">
+                <input type="hidden" name="id_existing" id="input-id-existing">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><label class="block text-sm font-bold mb-1">Tahun</label><select name="tahun_sakip" id="input-tahun" class="w-full border p-2 rounded"><option>2024</option><option>2025</option><option>2026</option></select></div>
+                  <div><label class="block text-sm font-bold mb-1">Sub Bagian</label><select name="sub_bagian" id="input-subbagian" class="w-full border p-2 rounded"><option value="kul">KUL</option><option value="sdm_parmas">SDM & Parmas</option><option value="tekhum">Tekhum</option><option value="rendatin">Rendatin</option></select></div>
+                  <div class="md:col-span-2"><label class="block text-sm font-bold mb-1">Nama Eviden</label><input type="text" name="nama_eviden" id="input-nama-eviden" class="w-full border p-2 rounded" required></div>
+                  <div class="md:col-span-2"><label class="block text-sm font-bold mb-1">File Dokumen (PDF)</label><input type="file" id="file-eviden" class="w-full border p-2 rounded bg-stone-50" required></div>
+                </div>
+                <input type="hidden" id="input-uploader" name="operator">
+                <button type="submit" class="mt-4 bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700 shadow"><i class="fas fa-upload"></i> Simpan File</button>
+              </form>
+            </div>
+
+            <!-- TAB: REQUEST (Superadmin Only) -->
+            <div id="tab-request" class="tab-content hidden bg-white p-6 rounded shadow-md border-t-4 border-stone-600">
+               <h3 class="text-xl font-bold mb-4 border-b pb-2">Kirim Permintaan Eviden</h3>
+               <form onsubmit="handleRequest(event)" id="form-request">
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" name="nama_eviden" class="md:col-span-2 border p-2 rounded" placeholder="Nama Eviden yang Diminta" required>
+                    <select name="tahun_sakip" class="border p-2 rounded"><option>2024</option><option>2025</option><option>2026</option></select>
+                    <select name="sub_bagian" class="border p-2 rounded"><option value="kul">KUL</option><option value="sdm_parmas">SDM & Parmas</option><option value="tekhum">Tekhum</option><option value="rendatin">Rendatin</option></select>
+                    <input type="date" name="deadline" class="border p-2 rounded" required>
+                 </div>
+                 <button type="submit" class="mt-4 bg-stone-700 text-white px-6 py-2 rounded font-bold shadow">Kirim Permintaan</button>
+               </form>
+            </div>
+
+            <!-- TAB: REVIEW INTERAKTIF (CARD STYLE) -->
+            <div id="tab-review" class="tab-content hidden bg-transparent">
+              <div class="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-wrap gap-4 items-end border-t-4 border-orange-600">
+                 <div class="w-full md:w-auto flex-grow">
+                    <label class="block text-xs font-bold text-stone-600 mb-1">Cari Eviden</label>
+                    <input type="text" id="flt-rev-search" onkeyup="renderReviewCards()" placeholder="Ketik nama eviden..." class="border p-2 rounded text-sm w-full">
+                 </div>
+                 <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">Tahun</label>
+                    <select id="flt-rev-thn" onchange="renderReviewCards()" class="border p-2 rounded text-sm min-w-[100px]"><option value="ALL">Semua</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select>
+                 </div>
+                 <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">Status</label>
+                    <select id="flt-rev-status" onchange="renderReviewCards()" class="border p-2 rounded text-sm min-w-[150px]">
+                       <option value="ALL">Semua Status</option>
+                       <option value="Verified">Sudah Diverifikasi</option>
+                       <option value="Menunggu">Menunggu / Sebagian</option>
+                       <option value="Ditolak">Ditolak</option>
+                       <option value="Belum Upload">Belum Diupload</option>
+                    </select>
+                 </div>
+                 <div id="filter-subbag-container">
+                    <label class="block text-xs font-bold text-stone-600 mb-1">Sub Bagian</label>
+                    <select id="flt-rev-sub" onchange="renderReviewCards()" class="border p-2 rounded text-sm min-w-[120px]">
+                       <option value="ALL">Semua Subbag</option>
+                       <option value="kul">KUL</option>
+                       <option value="sdm_parmas">SDM & Parmas</option>
+                       <option value="tekhum">Tekhum</option>
+                       <option value="rendatin">Rendatin</option>
+                    </select>
+                 </div>
+                 <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">Urutkan</label>
+                    <select id="sort-rev" onchange="renderReviewCards()" class="border p-2 rounded text-sm bg-stone-50">
+                       <option value="deadline_asc">Deadline (Terdekat)</option>
+                       <option value="deadline_desc">Deadline (Terlama)</option>
+                       <option value="nama_asc">Nama Eviden (A-Z)</option>
+                    </select>
+                 </div>
+                 <div class="ml-auto">
+                    <button onclick="loadGlobalData()" class="bg-stone-200 text-stone-700 px-4 py-2 rounded text-sm font-bold shadow hover:bg-stone-300"><i class="fas fa-sync"></i> Refresh Data</button>
+                 </div>
+              </div>
+
+              <div id="review-cards-container" class="space-y-6"></div>
+            </div>
+
+            <!-- TAB: DATA (Table Biasa) -->
+            <div id="tab-data" class="tab-content hidden bg-white p-6 rounded shadow-md overflow-x-auto border-t-4 border-stone-600">
+              <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-xl">Tabel Data Eviden SAKIP</h3><button onclick="loadGlobalData()" class="text-sm bg-stone-200 px-3 py-1 rounded shadow"><i class="fas fa-sync"></i> Refresh</button></div>
+              
+              <!-- Filters & Sort for Tabel Data -->
+              <div class="bg-stone-50 p-4 rounded-lg shadow-sm mb-4 flex flex-wrap gap-4 items-end border border-stone-200">
+                 <div class="flex-grow min-w-[200px]">
+                    <label class="block text-xs font-bold text-stone-600 mb-1">Cari Eviden</label>
+                    <input type="text" id="flt-data-search" onkeyup="renderTableData()" placeholder="Ketik nama eviden..." class="border p-2 rounded text-sm w-full">
+                 </div>
+                 <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">Tahun</label>
+                    <select id="flt-data-thn" onchange="renderTableData()" class="border p-2 rounded text-sm min-w-[100px]"><option value="ALL">Semua</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select>
+                 </div>
+                 <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">Status</label>
+                    <select id="flt-data-status" onchange="renderTableData()" class="border p-2 rounded text-sm min-w-[150px]">
+                       <option value="ALL">Semua Status</option>
+                       <option value="Verified">Sudah Diverifikasi</option>
+                       <option value="Sudah Upload">Sudah Upload</option>
+                       <option value="Direview Sebagian">Direview Sebagian</option>
+                       <option value="Ditolak">Ditolak</option>
+                       <option value="Permintaan">Permintaan / Belum Upload</option>
+                    </select>
+                 </div>
+                 <div id="filter-data-subbag-container">
+                    <label class="block text-xs font-bold text-stone-600 mb-1">Sub Bagian</label>
+                    <select id="flt-data-sub" onchange="renderTableData()" class="border p-2 rounded text-sm min-w-[120px]">
+                       <option value="ALL">Semua Subbag</option>
+                       <option value="kul">KUL</option>
+                       <option value="sdm_parmas">SDM & Parmas</option>
+                       <option value="tekhum">Tekhum</option>
+                       <option value="rendatin">Rendatin</option>
+                    </select>
+                 </div>
+                 <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">Urutkan</label>
+                    <select id="sort-data" onchange="renderTableData()" class="border p-2 rounded text-sm bg-stone-100">
+                       <option value="nama_asc">Nama Eviden (A-Z)</option>
+                       <option value="nama_desc">Nama Eviden (Z-A)</option>
+                       <option value="subbag_asc">Sub Bagian (A-Z)</option>
+                       <option value="tahun_desc">Tahun (Terbaru)</option>
+                       <option value="status_asc">Status (A-Z)</option>
+                    </select>
+                 </div>
+              </div>
+
+              <table class="w-full text-left border-collapse text-sm">
+                <thead class="bg-stone-100"><th class="p-3 border">Tahun</th><th class="p-3 border">Subbag</th><th class="p-3 border">Eviden</th><th class="p-3 border">Deadline</th><th class="p-3 border">Waktu Unggah</th><th class="p-3 border">Status</th><th class="p-3 border text-center">Aksi</th></thead>
+                <tbody id="table-body"></tbody>
+              </table>
+            </div>
+
+            <!-- TAB: PROFILE -->
+            <div id="tab-profile" class="tab-content hidden bg-white p-6 rounded shadow-md border-t-4 border-stone-600">
+               <div class="max-w-md bg-stone-50 p-4 rounded border mb-6">
+                 <h4 class="font-bold mb-2">Ganti Password Sendiri</h4>
+                 <input type="password" id="new-password" class="w-full border p-2 rounded mb-4" placeholder="Password Baru">
+                 <button onclick="changePass()" class="bg-stone-800 text-white px-4 py-2 rounded shadow">Simpan Password</button>
+               </div>
+               
+               <div id="admin-user-management" class="hidden border-t pt-6">
+                 <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-xl">Manajemen User</h3><button onclick="openUserModal('create')" class="bg-green-600 text-white px-3 py-1 rounded"><i class="fas fa-plus"></i> Tambah</button></div>
+                 <table class="w-full text-left text-sm"><thead class="bg-stone-200"><th class="p-2 border">User</th><th class="p-2 border">Nama</th><th class="p-2 border">Role</th><th class="p-2 border">Aksi</th></thead><tbody id="user-table-body"></tbody></table>
+               </div>
+            </div>
+
+            <!-- TAB: NOTIFIKASI WA (Superadmin Only) -->
+            <div id="tab-wa" class="tab-content hidden bg-white p-6 rounded shadow-md border-t-4 border-green-500">
+               <h3 class="text-xl font-bold mb-4 border-b pb-2 text-green-700"><i class="fas fa-whatsapp"></i> Kirim Pesan Notifikasi</h3>
+               
+               <!-- METODE 1: LAPORAN PROGRES OTOMATIS -->
+               <div class="mb-8 p-4 border border-green-200 bg-green-50 rounded-lg">
+                 <h4 class="font-bold text-green-800 mb-2"><i class="fas fa-chart-pie"></i> Kirim Laporan Progres (Otomatis)</h4>
+                 <p class="text-sm text-stone-600 mb-4">Sistem akan merekap dan mengirimkan informasi jumlah eviden yang terverifikasi, dalam proses, maupun belum selesai langsung ke WhatsApp operator bersangkutan.</p>
+
+                 <div class="flex items-center gap-4 mb-4">
+                    <label class="font-bold text-sm text-stone-700">Pilih Tahun Data:</label>
+                    <select id="wa-progress-year" class="border p-2 rounded focus:outline-none focus:border-green-500">
+                       <option value="2024">2024</option>
+                       <option value="2025">2025</option>
+                       <option value="2026">2026</option>
+                    </select>
+                 </div>
+
+                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <button onclick="handleSendProgressWA('kul')" class="bg-white border border-green-500 text-green-700 hover:bg-green-500 hover:text-white px-3 py-2 rounded text-sm font-bold transition shadow-sm"><i class="fas fa-paper-plane"></i> Subbag KUL</button>
+                    <button onclick="handleSendProgressWA('sdm_parmas')" class="bg-white border border-green-500 text-green-700 hover:bg-green-500 hover:text-white px-3 py-2 rounded text-sm font-bold transition shadow-sm"><i class="fas fa-paper-plane"></i> Subbag SDM & Parmas</button>
+                    <button onclick="handleSendProgressWA('tekhum')" class="bg-white border border-green-500 text-green-700 hover:bg-green-500 hover:text-white px-3 py-2 rounded text-sm font-bold transition shadow-sm"><i class="fas fa-paper-plane"></i> Subbag Tekhum</button>
+                    <button onclick="handleSendProgressWA('rendatin')" class="bg-white border border-green-500 text-green-700 hover:bg-green-500 hover:text-white px-3 py-2 rounded text-sm font-bold transition shadow-sm"><i class="fas fa-paper-plane"></i> Subbag Rendatin</button>
+                 </div>
+               </div>
+
+               <!-- METODE 2: PESAN MANUAL -->
+               <div class="p-4 border border-stone-200 bg-stone-50 rounded-lg">
+                 <h4 class="font-bold text-stone-800 mb-2"><i class="fas fa-keyboard"></i> Kirim Pesan Manual</h4>
+                 <p class="text-sm text-stone-600 mb-4">Kirimkan pesan informasi atau pengumuman secara bebas ke nomor WhatsApp operator yang terdaftar.</p>
+
+                 <form onsubmit="handleSendManualWA(event)" id="form-wa">
+                   <div class="mb-4">
+                      <label class="block text-sm font-bold text-stone-700 mb-2">Pilih Tujuan</label>
+                      <select id="wa-target" class="w-full md:w-1/2 border p-2 rounded focus:outline-none focus:border-green-500">
+                         <option value="all">Seluruh Operator (Semua Subbag)</option>
+                         <option value="kul">Hanya Sub Bagian KUL</option>
+                         <option value="sdm_parmas">Hanya Sub Bagian SDM & Parmas</option>
+                         <option value="tekhum">Hanya Sub Bagian Tekhum</option>
+                         <option value="rendatin">Hanya Sub Bagian Rendatin</option>
+                      </select>
+                   </div>
+                   <div class="mb-4">
+                      <label class="block text-sm font-bold text-stone-700 mb-2">Isi Pesan WhatsApp</label>
+                      <textarea id="wa-message" rows="4" class="w-full border p-3 rounded focus:outline-none focus:border-green-500" placeholder="Ketik pesan yang akan di-broadcast di sini..." required></textarea>
+                   </div>
+                   <button type="submit" class="bg-stone-700 hover:bg-stone-800 text-white px-6 py-2 rounded font-bold shadow transition"><i class="fas fa-comment-dots"></i> Kirim Pesan Manual</button>
+                 </form>
+               </div>
+            </div>
+
+          </div> <!-- End page-admin-wrapper -->
+
+      </div>
+    </main>
+
+    <!-- MODAL USER ADMIN -->
+    <div id="modal-user" class="hidden fixed inset-0 bg-stone-900 bg-opacity-75 flex justify-center items-center z-[70]">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 id="modal-user-title" class="font-bold text-lg mb-4 border-b pb-2">Tambah User</h3>
+        <form id="form-user" onsubmit="handleSaveUser(event)">
+          <input type="hidden" id="user-action" name="action">
+          <input type="hidden" id="old-username" name="oldUsername">
+          
+          <div class="mb-3 flex items-center">
+             <label class="w-1/3 text-sm font-bold text-stone-600">Username</label>
+             <input type="text" id="input-u-username" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500" required>
+          </div>
+          <div class="mb-3 flex items-center">
+             <label class="w-1/3 text-sm font-bold text-stone-600">Password</label>
+             <input type="text" id="input-u-password" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500" required>
+          </div>
+          <div class="mb-3 flex items-center">
+             <label class="w-1/3 text-sm font-bold text-stone-600">Nama Lengkap</label>
+             <input type="text" id="input-u-nama" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500" required>
+          </div>
+          <div class="mb-3 flex items-center">
+             <label class="w-1/3 text-sm font-bold text-stone-600">No HP</label>
+             <input type="text" id="input-u-hp" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500">
+          </div>
+          <div class="mb-4 flex items-center">
+             <label class="w-1/3 text-sm font-bold text-stone-600">Role</label>
+             <select id="input-u-role" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500">
+                <option value="superadmin">Superadmin</option>
+                <option value="pimpinan">Pimpinan</option>
+                <option value="operator_kul">KUL</option>
+                <option value="operator_sdmparmas">SDM & Parmas</option>
+                <option value="operator_tekhum">Tekhum</option>
+                <option value="operator_rendatin">Rendatin / Admin</option>
+             </select>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-4 border-t border-stone-200">
+             <button type="button" onclick="document.getElementById('modal-user').classList.add('hidden')" class="px-4 py-2 bg-stone-300 hover:bg-stone-400 text-stone-800 font-bold rounded transition">Batal</button>
+             <button type="submit" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded shadow transition">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL EDIT EVIDEN (SUPERADMIN) -->
+    <div id="modal-edit-eviden" class="hidden fixed inset-0 bg-stone-900 bg-opacity-75 flex justify-center items-center z-[70]">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 class="font-bold text-lg mb-4 border-b pb-2">Edit Metadata Eviden</h3>
+        <form id="form-edit-eviden" onsubmit="handleEditEviden(event)">
+          <input type="hidden" id="edit-e-id">
+          
+          <div class="mb-3 flex items-center">
+             <label class="w-1/3 text-sm font-bold text-stone-600">Tahun</label>
+             <select id="edit-e-tahun" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500">
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+             </select>
+          </div>
+          <div class="mb-3 flex items-center">
+             <label class="w-1/3 text-sm font-bold text-stone-600">Sub Bagian</label>
+             <select id="edit-e-subbagian" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500">
+                <option value="kul">KUL</option>
+                <option value="sdm_parmas">SDM & Parmas</option>
+                <option value="tekhum">Tekhum</option>
+                <option value="rendatin">Rendatin</option>
+             </select>
+          </div>
+          <div class="mb-4 flex items-center">
+             <label class="w-1/3 text-sm font-bold text-stone-600">Nama Eviden</label>
+             <input type="text" id="edit-e-nama" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500" required>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-4 border-t border-stone-200">
+             <button type="button" onclick="document.getElementById('modal-edit-eviden').classList.add('hidden')" class="px-4 py-2 bg-stone-300 hover:bg-stone-400 text-stone-800 font-bold rounded transition">Batal</button>
+             <button type="submit" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded shadow transition">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+      let currentUser = null, currentRole = null;
+      let globalEvidenData = [];
+      let charts = {};
+
+      window.onload = function() { loadDashboard(); showPage('page-home'); };
+
+      function setLoading(bool) { document.getElementById('loading').classList.toggle('hidden', !bool); }
+
+      // Fungsi Penanganan Error Global
+      function handleSystemError(err) {
+          setLoading(false);
+          alert("Kesalahan Sistem: " + err.message + "\n\nPastikan Anda telah melakukan Deploy -> New Version terbaru!");
+      }
+
+      // --- SIDEBAR TOGGLE ---
+      function toggleSidebar() {
+        const sb = document.getElementById('sidebar');
+        sb.classList.toggle('sidebar-collapsed');
+      }
+
+      function highlightMenu(id) {
+         // Reset styling
+         document.querySelectorAll('#sidebar a').forEach(el => {
+             el.classList.remove('bg-stone-700', 'border-orange-500');
+             el.classList.add('border-transparent');
+         });
+         // Apply to active
+         const activeEl = document.getElementById('menu-' + id);
+         if(activeEl) {
+             activeEl.classList.add('bg-stone-700', 'border-orange-500');
+             activeEl.classList.remove('border-transparent');
+         }
+      }
+
+      function showPage(id) {
+        // HIDE ALL SECTIONS
+        document.getElementById('page-home').classList.add('hidden');
+        document.getElementById('page-login').classList.add('hidden');
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+
+        // SHOW TARGET
+        if(id === 'page-home') {
+            document.getElementById('page-home').classList.remove('hidden');
+            document.getElementById('page-title').innerText = "Beranda Dashboard";
+            highlightMenu('home');
+        } else if(id === 'page-login') {
+            document.getElementById('page-login').classList.remove('hidden');
+            document.getElementById('page-title').innerText = "Login Sistem";
+            highlightMenu('login');
+        }
+      }
+
+      function showTab(id) {
+        // HIDE HOME & LOGIN
+        document.getElementById('page-home').classList.add('hidden');
+        document.getElementById('page-login').classList.add('hidden');
+        
+        // HIDE ALL OTHER TABS
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        
+        // SHOW THIS TAB
+        document.getElementById(id).classList.remove('hidden');
+
+        // Update Header & Sidebar
+        let title = "Halaman Admin";
+        let menuId = "";
+        
+        if(id === 'tab-upload') { title = "Formulir Upload Eviden"; menuId = 'upload'; }
+        else if(id === 'tab-request') { title = "Permintaan Eviden Baru"; menuId = 'request'; }
+        else if(id === 'tab-review') { title = "Review Eviden"; menuId = 'review'; loadGlobalData(); }
+        else if(id === 'tab-data') { title = "Data Eviden SAKIP"; menuId = 'data'; loadGlobalData(); }
+        else if(id === 'tab-profile') { title = "Manajemen Akun"; menuId = 'profile'; }
+        else if(id === 'tab-wa') { title = "Kirim Pesan Notifikasi"; menuId = 'wa'; }
+
+        document.getElementById('page-title').innerText = title;
+        highlightMenu(menuId);
+
+        // Access Check for User Management
+        if(id === 'tab-profile') {
+           if(currentRole === 'superadmin' || currentRole === 'operator_rendatin') {
+               document.getElementById('admin-user-management').classList.remove('hidden');
+               loadUsers();
+           } else {
+               document.getElementById('admin-user-management').classList.add('hidden');
+           }
+        }
+      }
+
+      function enterPanel() {
+        if (currentRole === 'superadmin' || currentRole === 'pimpinan') showTab('tab-review');
+        else showTab('tab-data');
+      }
+
+      // --- LOGIN LOGIC ---
+      function handleLogin(e) {
+        e.preventDefault();
+        const u = document.getElementById('login-user').value;
+        const p = document.getElementById('login-pass').value;
+        setLoading(true);
+        google.script.run
+        .withSuccessHandler(res => {
+          setLoading(false);
+          if (res.status === 'success') {
+            currentUser = res.username; currentRole = res.role;
+            
+            // Update Sidebar Info
+            document.getElementById('sb-nama').innerText = res.nama;
+            document.getElementById('sb-role').innerText = res.role;
+            document.getElementById('sidebar-user-info').classList.remove('hidden');
+            
+            // Toggle Menus based on Role
+            document.getElementById('menu-login').classList.add('hidden');
+            document.getElementById('btn-logout-sb').classList.remove('hidden');
+            document.getElementById('top-actions').classList.remove('hidden');
+            document.getElementById('panel-masuk-container').classList.remove('hidden');
+
+            document.getElementById('menu-profile').classList.remove('hidden');
+            document.getElementById('menu-review').classList.remove('hidden'); // Available for all
+
+            // ROLE: Superadmin
+            if(res.role === 'superadmin') {
+               document.getElementById('menu-upload').classList.remove('hidden');
+               document.getElementById('menu-request').classList.remove('hidden');
+               document.getElementById('menu-data').classList.remove('hidden');
+               document.getElementById('menu-wa').classList.remove('hidden');
+            }
+            // ROLE: Pimpinan
+            else if(res.role === 'pimpinan') {
+               // Only Review & Profile
+            }
+            // ROLE: Operator (Includes Admin Rendatin/Operator Rendatin)
+            else {
+               document.getElementById('menu-data').classList.remove('hidden');
+               // Set auto filter upload form
+               const subSelect = document.getElementById('input-subbagian');
+               document.getElementById('input-uploader').value = res.username;
+               
+               if(res.role.includes('kul')) subSelect.value = 'kul';
+               else if(res.role.includes('sdm')) subSelect.value = 'sdm_parmas';
+               else if(res.role.includes('tek')) subSelect.value = 'tekhum';
+               else if(res.role.includes('rendatin')) subSelect.value = 'rendatin';
+            }
+
+            // HIDE FILTER SUB BAGIAN IF OPERATOR
+            const filterContainer = document.getElementById('filter-subbag-container');
+            const dataFilterContainer = document.getElementById('filter-data-subbag-container');
+            if(res.role.includes('operator')) {
+               filterContainer.classList.add('hidden');
+               if(dataFilterContainer) dataFilterContainer.classList.add('hidden');
+            } else {
+               filterContainer.classList.remove('hidden');
+               if(dataFilterContainer) dataFilterContainer.classList.remove('hidden');
+            }
+
+            showPage('page-home');
+          } else alert(res.message);
+        })
+        .withFailureHandler(handleSystemError)
+        .loginUser(u, p);
+      }
+
+      function logout() {
+        // Reset State
+        currentUser = null; currentRole = null; globalEvidenData = [];
+
+        // Reset UI Sidebar
+        document.getElementById('sidebar-user-info').classList.add('hidden');
+        document.getElementById('btn-logout-sb').classList.add('hidden');
+        document.getElementById('menu-login').classList.remove('hidden');
+        
+        // Hide Restricted Menus
+        const menus = ['menu-upload', 'menu-request', 'menu-review', 'menu-data', 'menu-profile', 'menu-wa'];
+        menus.forEach(m => document.getElementById(m).classList.add('hidden'));
+
+        document.getElementById('top-actions').classList.add('hidden');
+        document.getElementById('panel-masuk-container').classList.add('hidden');
+        document.getElementById('form-login-el').reset();
+        
+        showPage('page-login');
+      }
+
+      // --- GLOBAL DATA FETCHING ---
+      function loadGlobalData() {
+        if(!currentRole) return;
+        setLoading(true);
+        google.script.run
+        .withSuccessHandler(rows => {
+          setLoading(false);
+          globalEvidenData = rows || [];
+          
+          if(!document.getElementById('tab-review').classList.contains('hidden')) renderReviewCards();
+          if(!document.getElementById('tab-data').classList.contains('hidden')) renderTableData();
+          
+        })
+        .withFailureHandler(handleSystemError)
+        .getEvidenData(currentRole);
+      }
+
+      // --- RENDERING TAB REVIEW ---
+      function renderReviewCards() {
+        const container = document.getElementById('review-cards-container');
+        container.innerHTML = '';
+        
+        const fltSearch = document.getElementById('flt-rev-search') ? document.getElementById('flt-rev-search').value.toLowerCase() : '';
+        const fltTahun = document.getElementById('flt-rev-thn').value;
+        const fltStatus = document.getElementById('flt-rev-status').value;
+        const fltSub = document.getElementById('flt-rev-sub').value;
+        const sortVal = document.getElementById('sort-rev').value;
+
+        // Filter Logic
+        let filtered = globalEvidenData.filter(row => {
+           let pass = true;
+           if(fltSearch && !String(row[2]).toLowerCase().includes(fltSearch)) pass = false;
+           if(fltTahun !== 'ALL' && String(row[1]) !== fltTahun) pass = false;
+           // Hanya filter subbagian jika user BUKAN operator
+           if(!currentRole.includes('operator')) {
+              if(fltSub !== 'ALL' && String(row[3]).toLowerCase() !== fltSub) pass = false;
+           }
+           
+           if(fltStatus !== 'ALL') {
+              const st = row[8];
+              if(fltStatus === 'Verified' && st !== 'Verified') pass = false;
+              if(fltStatus === 'Ditolak' && st !== 'Ditolak') pass = false;
+              if(fltStatus === 'Belum Upload' && st !== 'Permintaan') pass = false;
+              if(fltStatus === 'Menunggu' && (st === 'Verified' || st === 'Ditolak' || st === 'Permintaan')) pass = false;
+           }
+           return pass;
+        });
+
+        // Sorting
+        filtered.sort((a, b) => {
+           if(sortVal.includes('deadline')) {
+              let dateA = new Date(a[5] === '-' ? '2099-01-01' : a[5]);
+              let dateB = new Date(b[5] === '-' ? '2099-01-01' : b[5]);
+              return sortVal === 'deadline_asc' ? dateA - dateB : dateB - dateA;
+           } else {
+              return String(a[2]).localeCompare(String(b[2]));
+           }
+        });
+
+        if(filtered.length === 0) {
+           container.innerHTML = '<div class="text-center p-8 bg-white rounded shadow text-stone-500">Tidak ada data eviden sesuai filter.</div>';
+           return;
+        }
+
+        // Render Cards
+        filtered.forEach(row => {
+            const id = row[0], tahun = row[1], nama = row[2], sub = row[3], deadline = row[5], status = row[8];
+            const historyRaw = row[9];
+            
+            let history = [];
+            try { history = JSON.parse(historyRaw); } catch(e){}
+
+            // Style Badge
+            let badgeStyle = "bg-stone-200 text-stone-700";
+            let iconStyle = "fa-circle-notch fa-spin";
+            if(status === 'Verified') { badgeStyle = "bg-green-600 text-white"; iconStyle = "fa-check"; }
+            else if(status === 'Ditolak') { badgeStyle = "bg-red-600 text-white"; iconStyle = "fa-times"; }
+            else if(status === 'Permintaan') { badgeStyle = "bg-stone-200 text-stone-600"; iconStyle = "fa-clock"; }
+            else { badgeStyle = "bg-yellow-500 text-white"; iconStyle = "fa-hourglass-half"; }
+
+            // Evaluator Notes
+            let catatanEvaluatorHTML = '';
+            let evaluatorsNotes = history.filter(h => h.action === 'Tolak' || h.action === 'Verifikasi' || h.action.includes('Review Ulang'));
+            
+            if (evaluatorsNotes.length > 0) {
+                let noteItems = '';
+                evaluatorsNotes.forEach(note => {
+                   let colorText = note.action === 'Tolak' ? 'text-red-600' : (note.action.includes('Review Ulang') ? 'text-orange-600' : 'text-green-600');
+                   let iCon = note.action === 'Tolak' ? 'fa-times-circle' : (note.action.includes('Review Ulang') ? 'fa-sync' : 'fa-check-circle');
+                   noteItems += `<div class="mb-2 last:mb-0 bg-white p-2 rounded shadow-sm border border-stone-200"><strong class="text-xs uppercase ${colorText}"><i class="fas ${iCon}"></i> ${note.role} (${note.user}) - ${note.action}</strong><p class="text-sm mt-1 text-stone-800">${note.text}</p></div>`;
+                });
+                
+                catatanEvaluatorHTML = `
+                   <div class="mt-4 border-l-4 border-stone-400 bg-stone-50 p-4 rounded-r">
+                      <h4 class="text-stone-700 font-bold mb-2 text-sm"><i class="fas fa-list"></i> Catatan Evaluator:</h4>
+                      ${noteItems}
+                   </div>
+                `;
+            }
+
+            // Operator Uploads
+            let tanggapanHTML = '';
+            let uploads = history.filter(h => h.action === 'Upload');
+            if(uploads.length > 0) {
+               uploads.forEach((up, index) => {
+                  tanggapanHTML += `
+                    <div class="border rounded border-stone-200 bg-white p-4 mb-3 shadow-sm relative">
+                       <div class="text-[10px] text-stone-400 absolute top-3 right-3"><i class="far fa-calendar-alt"></i> ${up.date}</div>
+                       <h5 class="text-orange-700 font-bold text-sm mb-1">Tanggapan Ke-${index+1}</h5>
+                       <p class="text-xs text-stone-500 uppercase mb-2">OLEH: ${up.user}</p>
+                       <p class="text-sm text-stone-700 mb-3">${up.text}</p>
+                       ${up.link ? `<a href="${up.link}" target="_blank" class="inline-block border border-orange-600 text-orange-600 px-3 py-1 rounded text-xs hover:bg-orange-50 transition"><i class="fas fa-paperclip"></i> Lampiran Dokumen</a>` : ''}
+                    </div>
+                  `;
+               });
+            } else if(status !== 'Permintaan') {
+                tanggapanHTML = `<div class="text-sm italic text-stone-400">Belum ada riwayat tanggapan (dokumen lama).</div>`;
+            }
+
+            // Action Area
+            let actionAreaHTML = '';
+            const isReviewer = (currentRole === 'superadmin' || currentRole === 'pimpinan' || currentRole === 'operator_rendatin');
+
+            if (isReviewer && status !== 'Permintaan') {
+                if (status === 'Verified') {
+                   actionAreaHTML = `
+                     <div class="mt-6 pt-4 border-t border-stone-200 bg-green-50 p-4 rounded text-center">
+                        <h4 class="font-bold text-sm text-green-800 mb-2"><i class="fas fa-check-circle"></i> Eviden Telah Terverifikasi</h4>
+                        <p class="text-xs text-green-700 mb-4">Semua pihak telah menyetujui eviden ini.</p>
+                        
+                        <div class="bg-white p-3 rounded shadow-inner border mb-3 text-left">
+                           <label class="block text-xs font-bold text-stone-600 mb-1">Alasan Review Kembali</label>
+                           <input type="text" id="re-review-reason-${id}" class="w-full border p-2 rounded text-sm" placeholder="Contoh: Ada data baru...">
+                        </div>
+                        <button onclick="submitInlineReview('${id}', 're_review')" class="bg-orange-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-orange-700 shadow w-full">
+                           <i class="fas fa-undo"></i> Ajukan Review Kembali
+                        </button>
+                     </div>
+                   `;
+                } else {
+                   actionAreaHTML = `
+                     <div class="mt-6 pt-4 border-t border-stone-200">
+                        <h4 class="font-bold text-sm text-stone-800 mb-2"><i class="fas fa-comment-dots text-orange-600"></i> Berikan Evaluasi Anda</h4>
+                        <textarea id="eval-text-${id}" rows="2" class="w-full border p-3 rounded bg-stone-50 focus:bg-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm" placeholder="Catatan..."></textarea>
+                        <div class="flex gap-2 mt-3 justify-end">
+                           <button onclick="submitInlineReview('${id}', 'reject')" class="bg-red-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-red-700 shadow"><i class="fas fa-times"></i> Tolak</button>
+                           <button onclick="submitInlineReview('${id}', 'verify')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700 shadow"><i class="fas fa-check"></i> Verifikasi</button>
+                        </div>
+                     </div>
+                   `;
+                }
+            }
+            else if (!isReviewer) {
+                if (status === 'Ditolak' || status === 'Permintaan') {
+                    actionAreaHTML = `
+                      <div class="mt-4 pt-4 border-t border-stone-200 text-right">
+                         <span class="text-xs text-red-600 italic mr-2">Eviden ini perlu tindak lanjut.</span>
+                         <button onclick="prepareUpload('${id}', '${tahun}', '${sub}', '${nama.replace(/'/g,"\\'")}', '${deadline}')" class="bg-orange-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-orange-700 shadow pulse-animation">
+                            <i class="fas fa-upload"></i> Tindak Lanjut (Upload Revisi)
+                         </button>
+                      </div>
+                    `;
+                }
+            }
+
+            const card = `
+              <div class="bg-white rounded-lg shadow-md border border-stone-200 overflow-hidden relative">
+                 <div class="absolute left-0 top-0 bottom-0 w-2 ${status === 'Verified'?'bg-green-500':status==='Ditolak'?'bg-red-500':'bg-yellow-500'}"></div>
+                 <div class="p-5 pl-6">
+                    <div class="flex justify-between items-start mb-2">
+                       <div>
+                         <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeStyle}">
+                            <i class="fas ${iconStyle}"></i> ${status}
+                         </span>
+                         <h3 class="text-lg font-bold text-stone-800 mt-2">${nama}</h3>
+                         <div class="text-xs text-stone-500 mt-1 uppercase font-semibold"><i class="fas fa-building"></i> SUBBAG: ${sub.replace('_',' ')} &nbsp; | &nbsp; TAHUN: ${tahun}</div>
+                       </div>
+                       <div class="text-right">
+                          <div class="text-[10px] text-stone-400 uppercase font-bold tracking-widest">Deadline</div>
+                          <div class="text-sm font-bold ${deadline === '-' ? 'text-stone-500' : 'text-red-600'}">${deadline}</div>
+                       </div>
+                    </div>
+                    ${catatanEvaluatorHTML}
+                    <div class="mt-5">
+                       <h4 class="font-bold text-stone-700 mb-3 text-sm">Riwayat Tanggapan Operator</h4>
+                       ${tanggapanHTML}
+                    </div>
+                    ${actionAreaHTML}
+                 </div>
+              </div>
+            `;
+            container.innerHTML += card;
+        });
+      }
+
+      function submitInlineReview(rowId, actionType) {
+         let komentar = "";
+         if(actionType === 're_review') {
+             komentar = document.getElementById(`re-review-reason-${rowId}`).value;
+             if(komentar.trim() === '') { alert('Mohon isikan alasan review kembali.'); return; }
+         } else {
+             komentar = document.getElementById(`eval-text-${rowId}`).value;
+             if (actionType === 'reject' && komentar.trim() === '') { alert('Mohon tuliskan alasan penolakan.'); return; }
+         }
+
+         setLoading(true);
+         google.script.run
+         .withSuccessHandler(res => {
+            alert(res.message);
+            loadGlobalData(); 
+         })
+         .withFailureHandler(handleSystemError)
+         .reviewEvidence(rowId, actionType, komentar, currentUser, currentRole);
+      }
+
+      // --- RENDERING TAB DATA (TABEL BIASA) ---
+      function renderTableData() {
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = '';
+        if(globalEvidenData.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4">Tidak ada data.</td></tr>'; return; }
+
+        const fltSearch = document.getElementById('flt-data-search') ? document.getElementById('flt-data-search').value.toLowerCase() : '';
+        const fltTahun = document.getElementById('flt-data-thn') ? document.getElementById('flt-data-thn').value : 'ALL';
+        const fltStatus = document.getElementById('flt-data-status') ? document.getElementById('flt-data-status').value : 'ALL';
+        const fltSub = document.getElementById('flt-data-sub') ? document.getElementById('flt-data-sub').value : 'ALL';
+        const sortVal = document.getElementById('sort-data') ? document.getElementById('sort-data').value : 'nama_asc';
+
+        let filtered = globalEvidenData.filter(row => {
+           let pass = true;
+           if(fltSearch && !String(row[2]).toLowerCase().includes(fltSearch)) pass = false;
+           if(fltTahun !== 'ALL' && String(row[1]) !== fltTahun) pass = false;
+           
+           if(!currentRole.includes('operator')) {
+              if(fltSub !== 'ALL' && String(row[3]).toLowerCase() !== fltSub) pass = false;
+           }
+           
+           if(fltStatus !== 'ALL') {
+              const st = row[8];
+              if(fltStatus === 'Verified' && st !== 'Verified') pass = false;
+              if(fltStatus === 'Ditolak' && st !== 'Ditolak') pass = false;
+              if(fltStatus === 'Permintaan' && st !== 'Permintaan' && st !== 'Belum Upload') pass = false;
+              if(fltStatus === 'Sudah Upload' && st !== 'Sudah Upload') pass = false;
+              if(fltStatus === 'Direview Sebagian' && st !== 'Direview Sebagian') pass = false;
+           }
+           return pass;
+        });
+
+        filtered.sort((a, b) => {
+           if(sortVal === 'nama_asc') return String(a[2]).localeCompare(String(b[2]));
+           if(sortVal === 'nama_desc') return String(b[2]).localeCompare(String(a[2]));
+           if(sortVal === 'subbag_asc') return String(a[3]).localeCompare(String(b[3]));
+           if(sortVal === 'tahun_desc') return String(b[1]).localeCompare(String(a[1]));
+           if(sortVal === 'status_asc') return String(a[8]).localeCompare(String(b[8]));
+           return 0;
+        });
+
+        if(filtered.length === 0) {
+           tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-stone-500">Tidak ada data sesuai filter.</td></tr>'; 
+           return;
+        }
+
+        filtered.forEach(row => {
+            const id = row[0], tahun = row[1], nama = row[2], sub = row[3], deadline = row[5], waktuUnggah = row[6], status = row[8], link = row[7];
+            
+            let btnAction = '';
+            if (status === 'Permintaan' || status === 'Ditolak') {
+              btnAction = `<button onclick="prepareUpload('${id}', '${tahun}', '${sub}', '${nama.replace(/'/g,"\\'")}', '${deadline}')" class="bg-orange-600 text-white px-2 py-1 rounded text-xs">Upload</button>`;
+            } else {
+              btnAction = `<a href="${link}" target="_blank" class="text-stone-600 hover:text-orange-600"><i class="fas fa-file-download text-lg"></i></a>`;
+            }
+
+            let btnEdit = '';
+            if (currentRole === 'superadmin') {
+              btnEdit = `<button onclick="openEditEvidenModal('${id}', '${tahun}', '${sub}', '${nama.replace(/'/g,"\\'")}')" class="text-blue-600 hover:text-blue-800 ml-3" title="Edit Metadata Eviden"><i class="fas fa-edit text-lg"></i></button>`;
+            }
+
+            tbody.innerHTML += `
+              <tr class="border-b hover:bg-stone-50">
+                <td class="p-3">${tahun}</td>
+                <td class="p-3 uppercase text-xs">${sub}</td>
+                <td class="p-3 font-medium text-sm">${nama}</td>
+                <td class="p-3 text-xs whitespace-nowrap">${deadline}</td>
+                <td class="p-3 text-xs whitespace-nowrap">${waktuUnggah}</td>
+                <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold bg-stone-200">${status}</span></td>
+                <td class="p-3 text-center flex justify-center items-center">
+                   ${btnAction}
+                   ${btnEdit}
+                </td>
+              </tr>
+            `;
+        });
+      }
+
+      // --- UPLOAD & REQUEST ---
+      function prepareUpload(id, tahun, sub, nama, deadline) {
+        showTab('tab-upload');
+        document.getElementById('input-id-existing').value = id;
+        document.getElementById('input-tahun').value = tahun;
+        document.getElementById('input-subbagian').value = sub;
+        document.getElementById('input-nama-eviden').value = nama;
+        document.getElementById('input-tahun').disabled = true;
+        document.getElementById('input-subbagian').disabled = true;
+        document.getElementById('input-nama-eviden').readOnly = true;
+
+        document.getElementById('upload-instruction').classList.remove('hidden');
+        document.getElementById('upload-target-name').innerText = nama;
+        
+        const deadlineInfo = document.getElementById('upload-deadline-info');
+        if (deadline && deadline !== '-') {
+            deadlineInfo.classList.remove('hidden');
+            document.getElementById('upload-target-deadline').innerText = deadline;
+        } else {
+            deadlineInfo.classList.add('hidden');
+        }
+      }
+
+      function handleUpload(e) {
+        e.preventDefault();
+        const file = document.getElementById('file-eviden').files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          const formObject = Object.fromEntries(new FormData(document.getElementById('form-upload')).entries());
+          formObject.tahun_sakip = document.getElementById('input-tahun').value;
+          formObject.sub_bagian = document.getElementById('input-subbagian').value;
+
+          setLoading(true);
+          google.script.run
+          .withSuccessHandler(res => {
+            alert(res.message);
+            document.getElementById('form-upload').reset();
+            document.getElementById('upload-instruction').classList.add('hidden');
+            document.getElementById('input-tahun').disabled = false;
+            document.getElementById('input-subbagian').disabled = false;
+            document.getElementById('input-nama-eviden').readOnly = false;
+            loadGlobalData();
+            showTab('tab-data');
+          })
+          .withFailureHandler(handleSystemError)
+          .uploadEvidence(formObject, { filename: file.name, mimeType: file.type, bytes: ev.target.result.split(',')[1] }, currentRole);
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function handleRequest(e) {
+        e.preventDefault();
+        const formObj = Object.fromEntries(new FormData(e.target).entries());
+        setLoading(true);
+        google.script.run
+        .withSuccessHandler(res => {
+           alert(res.message); e.target.reset(); loadGlobalData();
+        })
+        .withFailureHandler(handleSystemError)
+        .requestEvidence(formObj);
+      }
+
+      // --- WHATSAPP NOTIFICATIONS ---
+      function handleSendManualWA(e) {
+         e.preventDefault();
+         const target = document.getElementById('wa-target').value;
+         const message = document.getElementById('wa-message').value;
+
+         if (!confirm('Anda yakin ingin mengirim pesan WhatsApp ini secara manual?')) return;
+
+         setLoading(true);
+         google.script.run
+         .withSuccessHandler(res => {
+             setLoading(false);
+             alert(res.message);
+             if (res.status === 'success') {
+                 document.getElementById('form-wa').reset();
+             }
+         })
+         .withFailureHandler(handleSystemError)
+         .sendManualWA(target, message);
+      }
+
+      function handleSendProgressWA(subbagian) {
+         const year = document.getElementById('wa-progress-year').value;
+         let subName = subbagian.toUpperCase().replace('_', ' & ');
+
+         if (!confirm(`Kirim Laporan Progres SAKIP Tahun ${year} ke WhatsApp operator Sub Bagian ${subName}?`)) return;
+
+         setLoading(true);
+         google.script.run
+         .withSuccessHandler(res => {
+             setLoading(false);
+             alert(res.message);
+         })
+         .withFailureHandler(handleSystemError)
+         .sendProgressReportWA(subbagian, year);
+      }
+
+      // --- DASHBOARD CHARTS ---
+      function loadDashboard() {
+        const year = document.getElementById('filter-tahun').value;
+        google.script.run
+        .withSuccessHandler(data => {
+          document.getElementById('stat-verified').innerText = data.overall.verified;
+          document.getElementById('stat-uploaded').innerText = data.overall.uploaded;
+          document.getElementById('stat-missing').innerText = data.overall.missing;
+          
+          if(charts['chartOverall']) charts['chartOverall'].destroy();
+          charts['chartOverall'] = new Chart(document.getElementById('chartOverall').getContext('2d'), {
+             type: 'bar', data: { labels: ['Verified', 'Proses', 'Belum/Tolak'], datasets: [{ label: 'Keseluruhan', data: [data.overall.verified, data.overall.uploaded, data.overall.missing], backgroundColor: ['#16a34a', '#eab308', '#dc2626'] }] }, options: { responsive:true, maintainAspectRatio:false }
+          });
+
+          const drawDonut = (id, subData) => {
+             if(charts[id]) charts[id].destroy();
+             charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                   labels: ['Verified', 'Proses', 'Belum'],
+                   datasets: [{ data: [subData.verified, subData.uploaded, subData.missing], backgroundColor: ['#16a34a', '#eab308', '#dc2626'] }]
+                },
+                options: { responsive:true, maintainAspectRatio:false, plugins: { legend: { position: 'right', labels: { boxWidth:10, font:{size:10} } } } }
+             });
+          };
+
+          drawDonut('chartRendatin', data.breakdown.RENDATIN);
+          drawDonut('chartSDM', data.breakdown.SDM_PARMAS);
+          drawDonut('chartKUL', data.breakdown.KUL);
+          drawDonut('chartTekhum', data.breakdown.TEKHUM);
+
+        })
+        .withFailureHandler(handleSystemError)
+        .getDashboardData(year);
+      }
+
+      // --- AKUN ---
+      function changePass() {
+        const p = document.getElementById('new-password').value;
+        if(!p) return;
+        setLoading(true); 
+        google.script.run
+        .withSuccessHandler(res => { setLoading(false); alert(res.message); })
+        .withFailureHandler(handleSystemError)
+        .changePassword(currentUser, p);
+      }
+      
+      // USER MANAGEMENT (SUPERADMIN ONLY)
+      function loadUsers() {
+        google.script.run
+        .withSuccessHandler(users => {
+          const tbody = document.getElementById('user-table-body'); 
+          tbody.innerHTML = '';
+          users.forEach(u => {
+             // Encode data agar aman dipassing ke fungsi
+             const safeUser = JSON.stringify(u).replace(/"/g, '&quot;'); 
+             
+             let editBtn = '';
+             // Hanya superadmin yang dapat edit
+             if(currentRole === 'superadmin') {
+                editBtn = `<button onclick="openUserModal('update', ${safeUser})" class="text-blue-600 hover:text-blue-800"><i class="fas fa-edit"></i></button>`;
+             }
+             
+             tbody.innerHTML += `
+               <tr class="border-b">
+                 <td class="p-2">${u[0]}</td>
+                 <td class="p-2">${u[2]}</td>
+                 <td class="p-2">${u[4]}</td>
+                 <td class="p-2 flex gap-2">
+                    ${editBtn}
+                    <button onclick="deleteUser('${u[0]}')" class="text-red-600 hover:text-red-800"><i class="fa fa-trash"></i></button>
+                 </td>
+               </tr>`;
+          });
+        })
+        .withFailureHandler(handleSystemError)
+        .getAllUsers();
+      }
+
+      function openUserModal(mode, data = null) { 
+        document.getElementById('modal-user').classList.remove('hidden'); 
+        document.getElementById('form-user').reset();
+        
+        if (mode === 'update' && data) {
+            document.getElementById('modal-user-title').innerText = "Edit User";
+            document.getElementById('user-action').value = 'update';
+            document.getElementById('old-username').value = data[0];
+            
+            document.getElementById('input-u-username').value = data[0];
+            document.getElementById('input-u-password').value = data[1];
+            document.getElementById('input-u-nama').value = data[2];
+            document.getElementById('input-u-hp').value = data[3];
+            document.getElementById('input-u-role').value = data[4];
+        } else {
+            document.getElementById('modal-user-title').innerText = "Tambah User";
+            document.getElementById('user-action').value = 'create';
+            document.getElementById('old-username').value = '';
+        }
+      }
+
+      function handleSaveUser(e) { 
+        e.preventDefault(); 
+        const action = document.getElementById('user-action').value;
+        const oldUser = document.getElementById('old-username').value;
+        
+        const u={
+            username:document.getElementById('input-u-username').value,
+            password:document.getElementById('input-u-password').value,
+            nama:document.getElementById('input-u-nama').value,
+            hp:document.getElementById('input-u-hp').value,
+            role:document.getElementById('input-u-role').value
+        }; 
+        
+        google.script.run
+        .withSuccessHandler(res=>{
+            alert(res.message); 
+            if(res.status === 'success') {
+                document.getElementById('modal-user').classList.add('hidden'); 
+                loadUsers();
+            }
+        })
+        .withFailureHandler(handleSystemError)
+        .manageUser(action, u, oldUser); 
+      }
+
+      function deleteUser(user) { 
+        if(confirm('Hapus User ini?')) {
+            google.script.run
+            .withSuccessHandler(res=>{
+                alert(res.message);
+                loadUsers();
+            })
+            .withFailureHandler(handleSystemError)
+            .manageUser('delete', null, user); 
+        }
+      }
+
+      // --- EDIT EVIDEN (SUPERADMIN ONLY) ---
+      function openEditEvidenModal(id, tahun, subbag, nama) {
+        document.getElementById('modal-edit-eviden').classList.remove('hidden');
+        document.getElementById('edit-e-id').value = id;
+        document.getElementById('edit-e-tahun').value = tahun;
+        document.getElementById('edit-e-subbagian').value = subbag;
+        
+        // Decode potential html entities for display
+        const txt = document.createElement("textarea");
+        txt.innerHTML = nama;
+        document.getElementById('edit-e-nama').value = txt.value;
+      }
+
+      function handleEditEviden(e) {
+        e.preventDefault();
+        const id = document.getElementById('edit-e-id').value;
+        const newData = {
+          tahun_sakip: document.getElementById('edit-e-tahun').value,
+          sub_bagian: document.getElementById('edit-e-subbagian').value,
+          nama_eviden: document.getElementById('edit-e-nama').value
+        };
+        
+        setLoading(true);
+        google.script.run
+        .withSuccessHandler(res => {
+          if(res.status === 'success') {
+             alert(res.message);
+             document.getElementById('modal-edit-eviden').classList.add('hidden');
+             loadGlobalData(); // Refresh UI setelah menyimpan
+          } else {
+             setLoading(false);
+             alert(res.message);
+          }
+        })
+        .withFailureHandler(handleSystemError)
+        .updateEvidenceData(id, newData, currentUser);
+      }
+
+    </script>
+  </body>
+</html>
