@@ -479,7 +479,21 @@
       let globalEvidenData = [];
       let charts = {};
 
-      window.onload = function() { loadDashboard(); showPage('page-home'); };
+      window.onload = function() { 
+          // Cek apakah ada sesi login yang tersimpan di localStorage
+          const savedSession = localStorage.getItem('sisolah_session');
+          if(savedSession) {
+              try {
+                  const res = JSON.parse(savedSession);
+                  setLoginState(res);
+              } catch(e) {
+                  console.error("Sesi tidak valid");
+              }
+          }
+          
+          loadDashboard(); 
+          showPage('page-home'); 
+      };
 
       function setLoading(bool) { document.getElementById('loading').classList.toggle('hidden', !bool); }
 
@@ -651,63 +665,78 @@
           .then(res => {
               setLoading(false);
               if (res.status === 'success') {
-                currentUser = res.username; currentRole = res.role;
+                // Simpan Sesi Login ke Local Storage
+                localStorage.setItem('sisolah_session', JSON.stringify(res));
                 
-                // Update Sidebar Info
-                document.getElementById('sb-nama').innerText = res.nama;
-                document.getElementById('sb-role').innerText = res.role;
-                document.getElementById('sidebar-user-info').classList.remove('hidden');
+                // Terapkan antarmuka sesuai role
+                setLoginState(res);
                 
-                // Toggle Menus based on Role
-                document.getElementById('menu-login').classList.add('hidden');
-                document.getElementById('top-actions').classList.remove('hidden');
-                document.getElementById('panel-masuk-container').classList.remove('hidden');
-
-                document.getElementById('menu-profile').classList.remove('hidden');
-                document.getElementById('menu-review').classList.remove('hidden'); // Available for all
-
-                // ROLE: Superadmin
-                if(res.role === 'superadmin') {
-                   document.getElementById('menu-upload').classList.remove('hidden');
-                   document.getElementById('menu-request').classList.remove('hidden');
-                   document.getElementById('menu-data').classList.remove('hidden');
-                   document.getElementById('menu-wa').classList.remove('hidden');
-                }
-                // ROLE: Pimpinan
-                else if(res.role === 'pimpinan') {
-                   // Only Review & Profile
-                }
-                // ROLE: Operator
-                else {
-                   document.getElementById('menu-data').classList.remove('hidden');
-                   // Set auto filter upload form
-                   const subSelect = document.getElementById('input-subbagian');
-                   document.getElementById('input-uploader').value = res.username;
-                   
-                   if(res.role.includes('kul')) subSelect.value = 'kul';
-                   else if(res.role.includes('sdm')) subSelect.value = 'sdm_parmas';
-                   else if(res.role.includes('tek')) subSelect.value = 'tekhum';
-                   else if(res.role.includes('rendatin')) subSelect.value = 'rendatin';
-                }
-
-                // HIDE FILTER SUB BAGIAN IF OPERATOR
-                const filterContainer = document.getElementById('filter-subbag-container');
-                const dataFilterContainer = document.getElementById('filter-data-subbag-container');
-                if(res.role.includes('operator')) {
-                   filterContainer.classList.add('hidden');
-                   if(dataFilterContainer) dataFilterContainer.classList.add('hidden');
-                } else {
-                   filterContainer.classList.remove('hidden');
-                   if(dataFilterContainer) dataFilterContainer.classList.remove('hidden');
-                }
-
                 showPage('page-home');
               } else alert(res.message);
           })
           .catch(handleSystemError);
       }
 
+      // Fungsi untuk mengatur tampilan antarmuka saat user login/reload
+      function setLoginState(res) {
+          currentUser = res.username; currentRole = res.role;
+          
+          // Update Sidebar Info
+          document.getElementById('sb-nama').innerText = res.nama;
+          document.getElementById('sb-role').innerText = res.role;
+          document.getElementById('sidebar-user-info').classList.remove('hidden');
+          
+          // Toggle Menus based on Role
+          document.getElementById('menu-login').classList.add('hidden');
+          document.getElementById('top-actions').classList.remove('hidden');
+          document.getElementById('panel-masuk-container').classList.remove('hidden');
+
+          document.getElementById('menu-profile').classList.remove('hidden');
+          document.getElementById('menu-review').classList.remove('hidden'); // Available for all
+
+          // ROLE: Superadmin
+          if(res.role === 'superadmin') {
+             document.getElementById('menu-upload').classList.remove('hidden');
+             document.getElementById('menu-request').classList.remove('hidden');
+             document.getElementById('menu-data').classList.remove('hidden');
+             document.getElementById('menu-wa').classList.remove('hidden');
+          }
+          // ROLE: Pimpinan
+          else if(res.role === 'pimpinan') {
+             // Only Review & Profile
+          }
+          // ROLE: Operator
+          else {
+             document.getElementById('menu-data').classList.remove('hidden');
+             // Set auto filter upload form
+             const subSelect = document.getElementById('input-subbagian');
+             const inputUploader = document.getElementById('input-uploader');
+             if(inputUploader) inputUploader.value = res.username;
+             
+             if(subSelect) {
+                 if(res.role.includes('kul')) subSelect.value = 'kul';
+                 else if(res.role.includes('sdm')) subSelect.value = 'sdm_parmas';
+                 else if(res.role.includes('tek')) subSelect.value = 'tekhum';
+                 else if(res.role.includes('rendatin')) subSelect.value = 'rendatin';
+             }
+          }
+
+          // HIDE FILTER SUB BAGIAN IF OPERATOR
+          const filterContainer = document.getElementById('filter-subbag-container');
+          const dataFilterContainer = document.getElementById('filter-data-subbag-container');
+          if(res.role.includes('operator')) {
+             if(filterContainer) filterContainer.classList.add('hidden');
+             if(dataFilterContainer) dataFilterContainer.classList.add('hidden');
+          } else {
+             if(filterContainer) filterContainer.classList.remove('hidden');
+             if(dataFilterContainer) dataFilterContainer.classList.remove('hidden');
+          }
+      }
+
       function logout() {
+        // Hapus Sesi dari Local Storage
+        localStorage.removeItem('sisolah_session');
+          
         // Reset State
         currentUser = null; currentRole = null; globalEvidenData = [];
 
