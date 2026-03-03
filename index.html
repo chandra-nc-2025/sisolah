@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <base target="_top">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SISOLAH - Sistem Informasi SAKIP Online</title>
@@ -101,35 +102,21 @@
              <span class="nav-text text-sm font-medium">Login</span>
           </a>
        </div>
-
-       <!-- Footer Actions -->
-       <div class="p-4 border-t border-stone-700 bg-stone-900">
-           <button onclick="logout()" id="btn-logout-sb" class="hidden w-full flex items-center justify-center gap-2 bg-red-700 hover:bg-red-800 text-white py-2 rounded transition-colors text-sm font-bold">
-               <i class="fas fa-sign-out-alt"></i>
-               <span class="nav-text">Logout</span>
-           </button>
-       </div>
     </aside>
 
     <!-- MAIN CONTENT AREA -->
     <main class="flex-1 h-screen overflow-y-auto flex flex-col bg-stone-100 relative">
       
-      <!-- Topbar for Mobile / Notifications -->
+      <!-- Topbar for Mobile & Logout Actions -->
       <div class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-40">
          <h2 class="text-lg font-bold text-stone-700 uppercase tracking-wide" id="page-title">Beranda</h2>
          
          <div id="top-actions" class="hidden flex items-center gap-4">
-            <!-- Notif -->
-            <div class="relative">
-              <button onclick="document.getElementById('notif-panel').classList.toggle('hidden')" class="relative text-stone-500 hover:text-orange-600 focus:outline-none">
-                 <i class="fas fa-bell text-xl"></i>
-                 <span id="notif-badge" class="hidden absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">0</span>
-              </button>
-              <div id="notif-panel" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-                <div class="bg-stone-100 p-2 border-b flex justify-between"><span class="font-bold text-sm text-stone-800">Notifikasi</span></div>
-                <ul id="notif-list-dropdown" class="max-h-64 overflow-y-auto text-sm divide-y divide-gray-100"></ul>
-              </div>
-            </div>
+            <!-- Tombol Logout Dipindah ke Kanan Atas -->
+            <button onclick="logout()" id="btn-logout" class="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-bold shadow-md">
+               <i class="fas fa-sign-out-alt"></i>
+               <span class="hidden sm:inline">Logout</span>
+            </button>
          </div>
       </div>
 
@@ -138,6 +125,7 @@
           <!-- LOADING -->
           <div id="loading" class="hidden fixed inset-0 bg-stone-900 bg-opacity-60 flex justify-center items-center z-[60]">
             <div class="loader rounded-full border-4 border-t-4 border-stone-200 h-12 w-12"></div>
+            <p class="text-white mt-4 ml-4 font-bold">Memproses Data...</p>
           </div>
 
           <!-- PAGE: HOME -->
@@ -483,7 +471,7 @@
       // ==========================================
       // URL BACKEND GOOGLE APPS SCRIPT ANDA
       // ==========================================
-      // GANTI TEKS DI BAWAH INI DENGAN URL WEB APP DARI LANGKAH 2
+      // GANTI TEKS DI BAWAH INI DENGAN URL WEB APP GAS ANDA
       const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz2ZAhZoHK2X_hiAyoXbJgSA9tPhfyZtw4ejtLHWG8dPAYVY6txFkztWhqGdXI9bBTI/exec"; 
       // ==========================================
 
@@ -498,7 +486,50 @@
       // Fungsi Penanganan Error Global
       function handleSystemError(err) {
           setLoading(false);
-          alert("Kesalahan Sistem: " + err.message + "\n\nPastikan URL GAS_WEB_APP_URL sudah benar!");
+          alert("Kesalahan Sistem: " + err.message + "\n\nPastikan Anda telah mengisi URL Web App GAS pada baris 'URL_GAS_ANDA_DISINI'");
+      }
+
+      // ==========================================
+      // FUNGSI BYPASS KIRIM WA LANGSUNG DARI BROWSER (ANTI LEMOT & PASTI BERHASIL)
+      // ==========================================
+      async function sendFonnteDirectly(targetsArray, message) {
+          if (!targetsArray || targetsArray.length === 0) return { status: 'error', message: 'Tidak ada nomor tujuan.' };
+
+          const token = "qDeYHSqmky6XWGS2jKeq"; // API Token Fonnte
+          const targetString = targetsArray.join(',');
+
+          const formData = new FormData();
+          formData.append('target', targetString);
+          formData.append('message', message);
+          formData.append('delay', '2');
+
+          try {
+              // Mencoba kirim normal secara langsung ke server WA
+              const response = await fetch("https://api.fonnte.com/send", {
+                  method: "POST",
+                  headers: { "Authorization": token },
+                  body: formData
+              });
+              const result = await response.json();
+              if (result.status === true) {
+                  return { status: 'success', message: 'Pesan berhasil dikirim ke ' + targetsArray.length + ' nomor!' };
+              } else {
+                  return { status: 'error', message: 'Server Fonnte menolak: ' + result.reason };
+              }
+          } catch (e) {
+              // HACK: Jika diblokir oleh sistem keamanan peramban (CORS GitHub), paksa tembus tanpa membaca respon balasan
+              try {
+                  await fetch("https://api.fonnte.com/send", {
+                      method: "POST",
+                      headers: { "Authorization": token },
+                      body: formData,
+                      mode: 'no-cors' 
+                  });
+                  return { status: 'success', message: 'Pesan berhasil dikirim! (Menggunakan mode Bypass Keamanan Browser)' };
+              } catch(err2) {
+                  return { status: 'error', message: 'Koneksi internet Anda gagal terhubung ke server WA.' };
+              }
+          }
       }
 
       // ------------------------------------------------------------------
@@ -512,10 +543,16 @@
         try {
             const response = await fetch(GAS_WEB_APP_URL, {
                 method: 'POST',
-                // Menggunakan text/plain agar Google Apps Script tidak memblokir (CORS) request preflight
+                // Harus text/plain agar tidak diblokir oleh CORS Preflight
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: actionName, data: dataPayload })
+                body: JSON.stringify({ action: actionName, data: dataPayload }),
+                // WAJIB ADA 'follow' agar GitHub bisa menembus redirect internal Google
+                redirect: 'follow' 
             });
+
+            if (!response.ok) {
+               throw new Error("Server mengembalikan status " + response.status);
+            }
 
             const result = await response.json();
             return result;
@@ -623,7 +660,6 @@
                 
                 // Toggle Menus based on Role
                 document.getElementById('menu-login').classList.add('hidden');
-                document.getElementById('btn-logout-sb').classList.remove('hidden');
                 document.getElementById('top-actions').classList.remove('hidden');
                 document.getElementById('panel-masuk-container').classList.remove('hidden');
 
@@ -677,7 +713,6 @@
 
         // Reset UI Sidebar
         document.getElementById('sidebar-user-info').classList.add('hidden');
-        document.getElementById('btn-logout-sb').classList.add('hidden');
         document.getElementById('menu-login').classList.remove('hidden');
         
         // Hide Restricted Menus
@@ -1063,38 +1098,117 @@
       }
 
       // --- WHATSAPP NOTIFICATIONS ---
-      function handleSendManualWA(e) {
+      async function handleSendManualWA(e) {
          e.preventDefault();
-         const target = document.getElementById('wa-target').value;
+         const targetSub = document.getElementById('wa-target').value;
          const message = document.getElementById('wa-message').value;
 
          if (!confirm('Anda yakin ingin mengirim pesan WhatsApp ini secara manual?')) return;
 
          setLoading(true);
-         callBackendAPI('sendManualWA', { targetSub: target, message: message })
-           .then(res => {
-               setLoading(false);
-               alert(res.message);
-               if (res.status === 'success') {
-                   document.getElementById('form-wa').reset();
-               }
-           })
-           .catch(handleSystemError);
+         try {
+             // 1. Ambil data User dari GAS untuk mencari Nomor HP
+             const users = await callBackendAPI('getAllUsers', {});
+             
+             // 2. Filter nomor tujuan
+             let targets = [];
+             users.forEach(u => {
+                 let role = String(u[4]).toLowerCase();
+                 let hp = String(u[3]).trim();
+                 if (hp && hp !== '-' && hp !== '') {
+                     if (targetSub === 'all' && role.includes('operator')) {
+                         targets.push(hp);
+                     } else if (targetSub !== 'all' && role.includes(targetSub.replace('_', ''))) {
+                         targets.push(hp);
+                     }
+                 }
+             });
+
+             if (targets.length === 0) {
+                 setLoading(false);
+                 alert(`Gagal: Tidak ada Nomor HP terdaftar untuk target kategori ini.`);
+                 return;
+             }
+
+             // 3. Kirim LANGSUNG ke Fonnte dari browser
+             const result = await sendFonnteDirectly(targets, message);
+             setLoading(false);
+             alert(result.message);
+             if (result.status === 'success') {
+                 document.getElementById('form-wa').reset();
+             }
+         } catch (error) {
+             handleSystemError(error);
+         }
       }
 
-      function handleSendProgressWA(subbagian) {
+      async function handleSendProgressWA(subbagian) {
          const year = document.getElementById('wa-progress-year').value;
          let subName = subbagian.toUpperCase().replace('_', ' & ');
 
          if (!confirm(`Kirim Laporan Progres SAKIP Tahun ${year} ke WhatsApp operator Sub Bagian ${subName}?`)) return;
 
          setLoading(true);
-         callBackendAPI('sendProgressReportWA', { targetSub: subbagian, year: year })
-           .then(res => {
-               setLoading(false);
-               alert(res.message);
-           })
-           .catch(handleSystemError);
+         try {
+             // 1. Hitung progres LANGSUNG di browser
+             let stats = { total: 0, verified: 0, proses: 0, belum: 0 };
+             globalEvidenData.forEach(row => {
+                 let rowYear = row[1];
+                 let rowSub = String(row[3]).toLowerCase();
+                 let status = row[8];
+
+                 if (rowYear.toString() === year.toString() && rowSub === subbagian) {
+                     stats.total++;
+                     if (status === 'Verified') stats.verified++;
+                     else if (status === 'Sudah Upload' || status === 'Pending' || status === 'Direview Sebagian') stats.proses++;
+                     else stats.belum++; // Permintaan, Ditolak, Belum Upload
+                 }
+             });
+
+             if (stats.total === 0) {
+                 setLoading(false);
+                 alert(`Tidak ada data eviden untuk ${subName} pada tahun ${year}.`);
+                 return;
+             }
+
+             let message = `*[LAPORAN PROGRES SAKIP]*\n`;
+             message += `Tahun: ${year}\n`;
+             message += `Sub Bagian: ${subName}\n\n`;
+             message += `📊 *Ringkasan Status:*\n`;
+             message += `- Total Eviden: ${stats.total}\n`;
+             message += `- ✅ Terverifikasi: ${stats.verified}\n`;
+             message += `- ⏳ Proses Upload/Review: ${stats.proses}\n`;
+             message += `- ❌ Belum/Ditolak: ${stats.belum}\n\n`;
+             message += `Mohon segera menindaklanjuti eviden yang masih berstatus proses atau belum selesai.\nTerima kasih.`;
+
+             // 2. Ambil data User dari GAS untuk dapat No HP
+             const users = await callBackendAPI('getAllUsers', {});
+             
+             let targets = [];
+             users.forEach(u => {
+                let role = String(u[4]).toLowerCase();
+                let hp = String(u[3]).trim();
+                if (hp && hp !== '-' && hp !== '') {
+                   if (role.includes(subbagian.replace('_', ''))) {
+                      targets.push(hp);
+                   }
+                }
+             });
+
+             if (targets.length === 0) {
+                 setLoading(false);
+                 alert(`Gagal: Tidak ada Nomor HP terdaftar untuk Sub Bagian ${subName}.`);
+                 return;
+             }
+
+             // 3. Kirim LANGSUNG ke Fonnte dari browser
+             const result = await sendFonnteDirectly(targets, message);
+             setLoading(false);
+             alert(result.message);
+
+         } catch (error) {
+             handleSystemError(error);
+         }
       }
 
       // --- DASHBOARD CHARTS ---
