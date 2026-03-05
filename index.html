@@ -770,10 +770,12 @@
           document.getElementById('panel-masuk-container').classList.remove('hidden');
 
           document.getElementById('menu-profile').classList.remove('hidden');
+
+          // Tampilkan Menu Review Untuk SEMUA user yang sudah login (termasuk operator)
+          document.getElementById('menu-review').classList.remove('hidden');
           
           // ROLE: Superadmin
           if(res.role === 'superadmin') {
-             document.getElementById('menu-review').classList.remove('hidden');
              document.getElementById('menu-upload').classList.remove('hidden');
              document.getElementById('menu-request').classList.remove('hidden');
              document.getElementById('menu-data').classList.remove('hidden');
@@ -781,12 +783,10 @@
           }
           // ROLE: Komisioner (Hanya view)
           else if(res.role === 'komisioner') {
-             document.getElementById('menu-review').classList.remove('hidden');
              document.getElementById('menu-data').classList.remove('hidden');
           }
           // ROLE: Kasubbag (Review & Data untuk Subbagnya sendiri)
           else if(res.role.includes('kasubbag')) {
-             document.getElementById('menu-review').classList.remove('hidden');
              document.getElementById('menu-data').classList.remove('hidden');
              
              // Set default dropdown subbag ke subbag kasubbag
