@@ -1282,16 +1282,26 @@
              try {
                  // 1. Hitung progres LANGSUNG di browser
                  let stats = { total: 0, verified: 0, proses: 0, belum: 0 };
+                 let listPerluUpload = [];
+                 let listPerluVerifikasi = [];
+
                  globalEvidenData.forEach(row => {
                      let rowYear = row[1];
                      let rowSub = String(row[3]).toLowerCase();
+                     let namaEviden = row[2];
                      let status = row[8];
 
                      if (rowYear.toString() === year.toString() && rowSub === subbagian) {
                          stats.total++;
-                         if (status === 'Verified') stats.verified++;
-                         else if (status === 'Sudah Upload' || status === 'Pending') stats.proses++;
-                         else stats.belum++; // Permintaan, Ditolak, Belum Upload
+                         if (status === 'Verified') {
+                             stats.verified++;
+                         } else if (status === 'Sudah Upload' || status === 'Pending') {
+                             stats.proses++;
+                             listPerluVerifikasi.push(namaEviden);
+                         } else {
+                             stats.belum++; // Permintaan, Ditolak, Belum Upload
+                             listPerluUpload.push(namaEviden);
+                         }
                      }
                  });
 
@@ -1309,6 +1319,26 @@
                  message += `- ✅ Terverifikasi: ${stats.verified}\n`;
                  message += `- ⏳ Proses Upload/Review: ${stats.proses}\n`;
                  message += `- ❌ Belum/Ditolak: ${stats.belum}\n\n`;
+                 
+                 if (listPerluUpload.length > 0 || listPerluVerifikasi.length > 0) {
+                     message += `📝 *Daftar Eviden Perlu Tindak Lanjut:*\n`;
+                     
+                     if (listPerluUpload.length > 0) {
+                         message += `\n*Perlu Diunggah / Ditolak:*\n`;
+                         listPerluUpload.forEach((item, index) => {
+                             message += `${index + 1}. ${item}\n`;
+                         });
+                     }
+                     
+                     if (listPerluVerifikasi.length > 0) {
+                         message += `\n*Menunggu Verifikasi Kasubbag:*\n`;
+                         listPerluVerifikasi.forEach((item, index) => {
+                             message += `${index + 1}. ${item}\n`;
+                         });
+                     }
+                     message += `\n`;
+                 }
+
                  message += `Mohon segera menindaklanjuti eviden yang masih berstatus proses atau belum selesai.\nTerima kasih.`;
 
                  // 2. Ambil data User dari GAS untuk dapat No HP
