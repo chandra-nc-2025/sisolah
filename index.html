@@ -21,7 +21,7 @@
       @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(234, 88, 12, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); } }
       
       /* Sidebar specific styles */
-      #sidebar { transition: width 0.3s ease-in-out; }
+      #sidebar { transition: width 0.3s ease-in-out, transform 0.3s ease-in-out; }
       .sidebar-collapsed { width: 5rem !important; } /* w-20 */
       .sidebar-collapsed .nav-text { display: none; }
       .sidebar-collapsed .nav-header { display: none; }
@@ -31,15 +31,20 @@
   <body class="bg-stone-100 font-sans min-h-screen text-stone-800 flex overflow-hidden">
 
     <!-- SIDEBAR NAVIGATION -->
-    <aside id="sidebar" class="bg-stone-800 text-white w-64 h-screen flex flex-col shadow-2xl z-50 border-r border-orange-700 relative flex-shrink-0">
+    <aside id="sidebar" class="bg-stone-800 text-white w-64 h-screen flex flex-col shadow-2xl border-r border-orange-700 absolute md:relative flex-shrink-0 transform -translate-x-full md:translate-x-0" style="z-index: 1000;">
        <!-- Header & Toggle -->
        <div class="h-16 flex items-center justify-between px-4 border-b border-stone-700 bg-stone-900">
           <div class="flex items-center gap-3 overflow-hidden">
              <i class="fas fa-box-open text-orange-500 text-xl logo-icon"></i>
              <span class="font-bold text-lg nav-header tracking-wide whitespace-nowrap">SISOLAH</span>
           </div>
-          <button onclick="toggleSidebar()" class="text-stone-400 hover:text-white focus:outline-none">
+          <!-- Tombol toggle sidebar untuk layar besar (Desktop) -->
+          <button onclick="toggleSidebar()" class="hidden md:block text-stone-400 hover:text-white focus:outline-none">
              <i class="fas fa-bars"></i>
+          </button>
+          <!-- Tombol tutup sidebar khusus layar kecil (Mobile) -->
+          <button onclick="toggleSidebar()" class="block md:hidden text-stone-400 hover:text-white focus:outline-none">
+             <i class="fas fa-times text-xl"></i>
           </button>
        </div>
 
@@ -109,11 +114,17 @@
     </aside>
 
     <!-- MAIN CONTENT AREA -->
-    <main class="flex-1 h-screen overflow-y-auto flex flex-col bg-stone-100 relative w-full">
+    <main class="flex-1 h-screen overflow-y-auto flex flex-col bg-stone-100 relative w-full" id="main-content">
       
       <!-- Topbar -->
-      <div class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-40">
-         <h2 class="text-lg font-bold text-stone-700 uppercase tracking-wide" id="page-title">Beranda</h2>
+      <div class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0" style="z-index: 40;">
+         <div class="flex items-center gap-4">
+             <!-- Tombol Hamburger khusus Mobile -->
+             <button onclick="toggleSidebar()" class="md:hidden text-stone-600 hover:text-orange-600 focus:outline-none">
+                <i class="fas fa-bars text-xl"></i>
+             </button>
+             <h2 class="text-lg font-bold text-stone-700 uppercase tracking-wide" id="page-title">Beranda</h2>
+         </div>
          
          <div id="top-actions" class="hidden flex items-center gap-4">
             <button onclick="logout()" id="btn-logout" class="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-bold shadow-md">
@@ -125,25 +136,19 @@
 
       <!-- Content Container -->
       <div class="p-4 md:p-6 flex-1">
-          <!-- LOADING -->
-          <div id="loading" class="hidden fixed inset-0 bg-stone-900 bg-opacity-60 flex justify-center items-center z-[60]">
-            <div class="loader rounded-full border-4 border-t-4 border-stone-200 h-12 w-12"></div>
-            <p class="text-white mt-4 ml-4 font-bold">Memproses Data...</p>
-          </div>
-
           <!-- PAGE: HOME -->
           <div id="page-home" class="page-section">
             <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-6 rounded-lg shadow-md border-l-4 border-orange-600">
-              <div>
+              <div class="w-full md:w-auto text-center md:text-left">
                 <h2 class="text-2xl font-bold text-stone-800">SISOLAH</h2>
                 <p class="text-stone-600 text-sm font-medium mb-2">Sistem Informasi SAKIP Online</p>
                 <div id="panel-masuk-container" class="hidden mt-4">
                    <p class="text-sm text-green-600 font-bold"><i class="fas fa-check-circle"></i> Anda telah login.</p>
                 </div>
               </div>
-              <div class="mt-4 md:mt-0 flex items-center gap-2">
+              <div class="mt-4 md:mt-0 flex items-center gap-2 w-full md:w-auto justify-center">
                  <label class="font-bold text-stone-700">Tahun:</label>
-                 <select id="filter-tahun" onchange="loadDashboard()" class="border p-2 rounded bg-stone-50 font-semibold">
+                 <select id="filter-tahun" onchange="loadDashboard()" class="border p-2 rounded bg-stone-50 font-semibold focus:outline-none focus:ring-1 focus:ring-orange-500">
                    <option value="2024" selected>2024</option><option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option>
                  </select>
               </div>
@@ -156,26 +161,26 @@
             </div>
             
             <div class="grid grid-cols-1 mb-8">
-               <div class="bg-white p-6 rounded shadow-md"><h3 class="font-bold text-stone-700 mb-4 border-b pb-2">Grafik Keseluruhan</h3><div class="h-64 w-full"><canvas id="chartOverall"></canvas></div></div>
+               <div class="bg-white p-6 rounded shadow-md"><h3 class="font-bold text-stone-700 mb-4 border-b pb-2">Grafik Keseluruhan</h3><div class="h-64 w-full relative"><canvas id="chartOverall"></canvas></div></div>
             </div>
 
             <h3 class="font-bold text-stone-700 mb-4 text-lg border-l-4 border-orange-600 pl-3">Progres Per Sub Bagian</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="bg-white p-4 rounded shadow-md"><h4 class="font-bold text-center text-sm mb-2 text-stone-700">SUB BAGIAN RENDATIN</h4><div class="h-48 flex justify-center"><canvas id="chartRendatin"></canvas></div></div>
-              <div class="bg-white p-4 rounded shadow-md"><h4 class="font-bold text-center text-sm mb-2 text-stone-700">SUB BAGIAN SDM & PARMAS</h4><div class="h-48 flex justify-center"><canvas id="chartSDM"></canvas></div></div>
-              <div class="bg-white p-4 rounded shadow-md"><h4 class="font-bold text-center text-sm mb-2 text-stone-700">SUB BAGIAN KUL</h4><div class="h-48 flex justify-center"><canvas id="chartKUL"></canvas></div></div>
-              <div class="bg-white p-4 rounded shadow-md"><h4 class="font-bold text-center text-sm mb-2 text-stone-700">SUB BAGIAN TEKHUM</h4><div class="h-48 flex justify-center"><canvas id="chartTekhum"></canvas></div></div>
+              <div class="bg-white p-4 rounded shadow-md"><h4 class="font-bold text-center text-sm mb-2 text-stone-700">SUB BAGIAN RENDATIN</h4><div class="h-48 flex justify-center relative"><canvas id="chartRendatin"></canvas></div></div>
+              <div class="bg-white p-4 rounded shadow-md"><h4 class="font-bold text-center text-sm mb-2 text-stone-700">SUB BAGIAN SDM & PARMAS</h4><div class="h-48 flex justify-center relative"><canvas id="chartSDM"></canvas></div></div>
+              <div class="bg-white p-4 rounded shadow-md"><h4 class="font-bold text-center text-sm mb-2 text-stone-700">SUB BAGIAN KUL</h4><div class="h-48 flex justify-center relative"><canvas id="chartKUL"></canvas></div></div>
+              <div class="bg-white p-4 rounded shadow-md"><h4 class="font-bold text-center text-sm mb-2 text-stone-700">SUB BAGIAN TEKHUM</h4><div class="h-48 flex justify-center relative"><canvas id="chartTekhum"></canvas></div></div>
             </div>
           </div>
 
           <!-- PAGE: LOGIN -->
-          <div id="page-login" class="page-section hidden max-w-md mx-auto mt-10">
-            <div class="bg-white rounded-lg shadow-xl p-8 border-t-8 border-orange-600">
+          <div id="page-login" class="page-section hidden max-w-md mx-auto mt-10 w-full px-4 md:px-0">
+            <div class="bg-white rounded-lg shadow-xl p-6 md:p-8 border-t-8 border-orange-600 w-full">
               <div class="text-center mb-6"><i class="fas fa-user-circle text-6xl text-stone-300"></i><h2 class="text-2xl font-bold mt-2">Login</h2></div>
               <form onsubmit="handleLogin(event)" id="form-login-el">
-                <input type="text" id="login-user" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Username" required>
-                <input type="password" id="login-pass" class="w-full mb-6 px-3 py-2 border rounded" placeholder="Password" required>
-                <button type="submit" class="w-full bg-stone-800 text-white font-bold py-2 rounded hover:bg-stone-900 shadow">Masuk</button>
+                <input type="text" id="login-user" class="w-full mb-4 px-3 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Username" required>
+                <input type="password" id="login-pass" class="w-full mb-6 px-3 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Password" required>
+                <button type="submit" class="w-full bg-stone-800 text-white font-bold py-3 rounded hover:bg-stone-900 shadow active:bg-stone-950 transition-colors cursor-pointer">Masuk Sistem</button>
               </form>
             </div>
           </div>
@@ -193,13 +198,13 @@
               <form id="form-upload" onsubmit="handleUpload(event)">
                 <input type="hidden" name="id_existing" id="input-id-existing">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><label class="block text-sm font-bold mb-1">Tahun</label><select name="tahun_sakip" id="input-tahun" class="w-full border p-2 rounded"><option>2024</option><option>2025</option><option>2026</option><option>2027</option></select></div>
-                  <div><label class="block text-sm font-bold mb-1">Sub Bagian</label><select name="sub_bagian" id="input-subbagian" class="w-full border p-2 rounded"><option value="kul">KUL</option><option value="sdm_parmas">SDM & Parmas</option><option value="tekhum">Tekhum</option><option value="rendatin">Rendatin</option></select></div>
-                  <div class="md:col-span-2"><label class="block text-sm font-bold mb-1">Nama Eviden</label><input type="text" name="nama_eviden" id="input-nama-eviden" class="w-full border p-2 rounded" required></div>
-                  <div class="md:col-span-2"><label class="block text-sm font-bold mb-1">File Dokumen (PDF)</label><input type="file" id="file-eviden" class="w-full border p-2 rounded bg-stone-50" required></div>
+                  <div><label class="block text-sm font-bold mb-1">Tahun</label><select name="tahun_sakip" id="input-tahun" class="w-full border p-2 rounded focus:ring-1 focus:ring-orange-500"><option>2024</option><option>2025</option><option>2026</option><option>2027</option></select></div>
+                  <div><label class="block text-sm font-bold mb-1">Sub Bagian</label><select name="sub_bagian" id="input-subbagian" class="w-full border p-2 rounded focus:ring-1 focus:ring-orange-500"><option value="kul">KUL</option><option value="sdm_parmas">SDM & Parmas</option><option value="tekhum">Tekhum</option><option value="rendatin">Rendatin</option></select></div>
+                  <div class="md:col-span-2"><label class="block text-sm font-bold mb-1">Nama Eviden</label><input type="text" name="nama_eviden" id="input-nama-eviden" class="w-full border p-2 rounded focus:ring-1 focus:ring-orange-500" required></div>
+                  <div class="md:col-span-2"><label class="block text-sm font-bold mb-1">File Dokumen (PDF)</label><input type="file" id="file-eviden" class="w-full border p-2 rounded bg-stone-50 focus:ring-1 focus:ring-orange-500" required></div>
                 </div>
                 <input type="hidden" id="input-uploader" name="operator">
-                <button type="submit" class="mt-4 bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700 shadow"><i class="fas fa-upload"></i> Simpan File</button>
+                <button type="submit" class="mt-4 bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700 shadow w-full md:w-auto"><i class="fas fa-upload"></i> Simpan File</button>
               </form>
             </div>
 
@@ -208,12 +213,12 @@
                <h3 class="text-xl font-bold mb-4 border-b pb-2">Kirim Permintaan Eviden Manual</h3>
                <form onsubmit="handleRequest(event)" id="form-request">
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" name="nama_eviden" class="md:col-span-2 border p-2 rounded" placeholder="Nama Eviden yang Diminta" required>
-                    <select name="tahun_sakip" class="border p-2 rounded"><option>2024</option><option>2025</option><option>2026</option><option>2027</option></select>
-                    <select name="sub_bagian" class="border p-2 rounded"><option value="kul">KUL</option><option value="sdm_parmas">SDM & Parmas</option><option value="tekhum">Tekhum</option><option value="rendatin">Rendatin</option></select>
-                    <input type="date" name="deadline" class="border p-2 rounded" required>
+                    <input type="text" name="nama_eviden" class="md:col-span-2 border p-2 rounded focus:ring-1 focus:ring-stone-500" placeholder="Nama Eviden yang Diminta" required>
+                    <select name="tahun_sakip" class="border p-2 rounded focus:ring-1 focus:ring-stone-500"><option>2024</option><option>2025</option><option>2026</option><option>2027</option></select>
+                    <select name="sub_bagian" class="border p-2 rounded focus:ring-1 focus:ring-stone-500"><option value="kul">KUL</option><option value="sdm_parmas">SDM & Parmas</option><option value="tekhum">Tekhum</option><option value="rendatin">Rendatin</option></select>
+                    <input type="date" name="deadline" class="border p-2 rounded focus:ring-1 focus:ring-stone-500" required>
                  </div>
-                 <button type="submit" class="mt-4 bg-stone-700 text-white px-6 py-2 rounded font-bold shadow">Kirim Permintaan</button>
+                 <button type="submit" class="mt-4 bg-stone-700 text-white px-6 py-2 rounded font-bold shadow hover:bg-stone-800 w-full md:w-auto">Kirim Permintaan</button>
                </form>
             </div>
 
@@ -222,16 +227,16 @@
                
                <!-- Section: Generate Database LKE Tahunan -->
                <div class="bg-white p-6 rounded shadow-md border-t-4 border-blue-500">
-                 <h3 class="text-xl font-bold mb-2 text-blue-700"><i class="fas fa-database"></i> Generate Database & Folder LKE Tahunan</h3>
+                 <h3 class="text-xl font-bold mb-2 text-blue-700"><i class="fas fa-database"></i> Generate Database & Folder LKE</h3>
                  <p class="text-sm text-stone-600 mb-4">Fitur ini akan menyalin template dari sheet "LKE", membuat sheet "database_eviden_TAHUN" baru, serta otomatis membuat hirarki folder Google Drive untuk setiap komponen.</p>
-                 <div class="flex gap-4 items-end">
-                    <div>
+                 <div class="flex flex-col md:flex-row gap-4 items-start md:items-end">
+                    <div class="w-full md:w-auto">
                        <label class="block text-sm font-bold text-stone-700 mb-1">Pilih Tahun LKE</label>
-                       <select id="lke-generate-year" class="border p-2 rounded focus:outline-none focus:border-blue-500 w-32">
+                       <select id="lke-generate-year" class="border p-2 rounded focus:outline-none focus:border-blue-500 w-full md:w-32">
                           <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option>
                        </select>
                     </div>
-                    <button onclick="handleGenerateLKE()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold shadow transition"><i class="fas fa-cogs"></i> Generate LKE Sekarang</button>
+                    <button onclick="handleGenerateLKE()" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold shadow transition"><i class="fas fa-cogs"></i> Generate Sekarang</button>
                  </div>
                </div>
 
@@ -243,32 +248,32 @@
                  <div class="bg-stone-50 p-4 border rounded mb-6">
                     <h4 class="font-bold text-stone-700 mb-2">1. Tambah ke Daftar Master</h4>
                     <form onsubmit="handleSaveMaster(event)" class="flex flex-col md:flex-row gap-3">
-                       <input type="text" id="master-nama" placeholder="Nama Eviden..." class="flex-1 border p-2 rounded" required>
-                       <select id="master-subbag" class="border p-2 rounded w-full md:w-48" required>
+                       <input type="text" id="master-nama" placeholder="Nama Eviden..." class="flex-1 border p-2 rounded focus:ring-1 focus:ring-blue-500" required>
+                       <select id="master-subbag" class="border p-2 rounded w-full md:w-48 focus:ring-1 focus:ring-blue-500" required>
                           <option value="kul">KUL</option><option value="sdm_parmas">SDM & Parmas</option><option value="tekhum">Tekhum</option><option value="rendatin">Rendatin</option>
                        </select>
-                       <button type="submit" class="bg-stone-700 text-white px-4 py-2 rounded font-bold whitespace-nowrap"><i class="fas fa-plus"></i> Tambah</button>
+                       <button type="submit" class="bg-stone-700 hover:bg-stone-800 text-white px-4 py-2 rounded font-bold whitespace-nowrap"><i class="fas fa-plus"></i> Tambah</button>
                     </form>
                  </div>
 
                  <div class="bg-blue-50 p-4 border border-blue-200 rounded mb-6">
-                    <h4 class="font-bold text-blue-800 mb-2">2. Generate Permintaan Massal (Siklus Tahunan)</h4>
-                    <div class="flex flex-col md:flex-row gap-3 items-end">
-                       <div>
+                    <h4 class="font-bold text-blue-800 mb-2">2. Generate Permintaan Massal</h4>
+                    <div class="flex flex-col md:flex-row gap-3 items-start md:items-end">
+                       <div class="w-full md:w-auto">
                           <label class="block text-xs font-bold mb-1">Tahun Anggaran</label>
-                          <select id="master-gen-tahun" class="border p-2 rounded"><option>2024</option><option>2025</option><option>2026</option><option>2027</option></select>
+                          <select id="master-gen-tahun" class="border p-2 rounded w-full md:w-auto focus:ring-1 focus:ring-blue-500"><option>2024</option><option>2025</option><option>2026</option><option>2027</option></select>
                        </div>
-                       <div>
-                          <label class="block text-xs font-bold mb-1">Tenggat Waktu (Deadline) Serentak</label>
-                          <input type="date" id="master-gen-deadline" class="border p-2 rounded" required>
+                       <div class="w-full md:w-auto">
+                          <label class="block text-xs font-bold mb-1">Tenggat Waktu Serentak</label>
+                          <input type="date" id="master-gen-deadline" class="border p-2 rounded w-full md:w-auto focus:ring-1 focus:ring-blue-500" required>
                        </div>
-                       <button onclick="handleGenerateBulk()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold shadow transition"><i class="fas fa-bolt"></i> Generate ke Seluruh Subbag</button>
+                       <button onclick="handleGenerateBulk()" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold shadow transition mt-2 md:mt-0"><i class="fas fa-bolt"></i> Generate ke Subbag</button>
                     </div>
                  </div>
 
                  <h4 class="font-bold text-stone-700 mb-2 border-b pb-2">Tabel Master Eviden</h4>
                  <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm border-collapse">
+                    <table class="w-full text-left text-sm border-collapse min-w-[500px]">
                        <thead class="bg-stone-200"><th class="p-2 border">Sub Bagian</th><th class="p-2 border">Nama Eviden</th><th class="p-2 border w-24 text-center">Aksi</th></thead>
                        <tbody id="master-table-body"></tbody>
                     </table>
@@ -278,18 +283,18 @@
 
             <!-- TAB: REVIEW INTERAKTIF (CARD STYLE) -->
             <div id="tab-review" class="tab-content hidden bg-transparent">
-              <div class="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-wrap gap-4 items-end border-t-4 border-orange-600">
+              <div class="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-col md:flex-row flex-wrap gap-4 items-start md:items-end border-t-4 border-orange-600">
                  <div class="w-full md:w-auto flex-grow">
                     <label class="block text-xs font-bold text-stone-600 mb-1">Cari Eviden</label>
-                    <input type="text" id="flt-rev-search" onkeyup="renderReviewCards()" placeholder="Ketik nama eviden..." class="border p-2 rounded text-sm w-full">
+                    <input type="text" id="flt-rev-search" onkeyup="renderReviewCards()" placeholder="Ketik nama eviden..." class="border p-2 rounded text-sm w-full focus:ring-1 focus:ring-orange-500">
                  </div>
-                 <div>
+                 <div class="w-full md:w-auto">
                     <label class="block text-xs font-bold text-stone-600 mb-1">Tahun</label>
-                    <select id="flt-rev-thn" onchange="renderReviewCards()" class="border p-2 rounded text-sm min-w-[100px]"><option value="ALL">Semua</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select>
+                    <select id="flt-rev-thn" onchange="renderReviewCards()" class="border p-2 rounded text-sm w-full md:min-w-[100px] focus:ring-1 focus:ring-orange-500"><option value="ALL">Semua</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select>
                  </div>
-                 <div>
+                 <div class="w-full md:w-auto">
                     <label class="block text-xs font-bold text-stone-600 mb-1">Status</label>
-                    <select id="flt-rev-status" onchange="renderReviewCards()" class="border p-2 rounded text-sm min-w-[150px]">
+                    <select id="flt-rev-status" onchange="renderReviewCards()" class="border p-2 rounded text-sm w-full md:min-w-[150px] focus:ring-1 focus:ring-orange-500">
                        <option value="ALL">Semua Status</option>
                        <option value="Verified">Sudah Diverifikasi</option>
                        <option value="Menunggu">Menunggu Review</option>
@@ -297,9 +302,9 @@
                        <option value="Belum Upload">Belum Diupload</option>
                     </select>
                  </div>
-                 <div id="filter-subbag-container">
+                 <div id="filter-subbag-container" class="w-full md:w-auto">
                     <label class="block text-xs font-bold text-stone-600 mb-1">Sub Bagian</label>
-                    <select id="flt-rev-sub" onchange="renderReviewCards()" class="border p-2 rounded text-sm min-w-[120px]">
+                    <select id="flt-rev-sub" onchange="renderReviewCards()" class="border p-2 rounded text-sm w-full md:min-w-[120px] focus:ring-1 focus:ring-orange-500">
                        <option value="ALL">Semua Subbag</option>
                        <option value="kul">KUL</option>
                        <option value="sdm_parmas">SDM & Parmas</option>
@@ -307,16 +312,16 @@
                        <option value="rendatin">Rendatin</option>
                     </select>
                  </div>
-                 <div>
+                 <div class="w-full md:w-auto">
                     <label class="block text-xs font-bold text-stone-600 mb-1">Urutkan</label>
-                    <select id="sort-rev" onchange="renderReviewCards()" class="border p-2 rounded text-sm bg-stone-50">
+                    <select id="sort-rev" onchange="renderReviewCards()" class="border p-2 rounded text-sm w-full bg-stone-50 focus:ring-1 focus:ring-orange-500">
                        <option value="deadline_asc">Deadline (Terdekat)</option>
                        <option value="deadline_desc">Deadline (Terlama)</option>
                        <option value="nama_asc">Nama Eviden (A-Z)</option>
                     </select>
                  </div>
-                 <div class="ml-auto">
-                    <button onclick="loadGlobalData()" class="bg-stone-200 text-stone-700 px-4 py-2 rounded text-sm font-bold shadow hover:bg-stone-300"><i class="fas fa-sync"></i> Refresh Data</button>
+                 <div class="w-full md:w-auto md:ml-auto mt-2 md:mt-0">
+                    <button onclick="loadGlobalData()" class="w-full md:w-auto bg-stone-200 text-stone-700 px-4 py-2 rounded text-sm font-bold shadow hover:bg-stone-300"><i class="fas fa-sync"></i> Refresh</button>
                  </div>
               </div>
 
@@ -324,68 +329,74 @@
             </div>
 
             <!-- TAB: DATA (Table Biasa) -->
-            <div id="tab-data" class="tab-content hidden bg-white p-6 rounded shadow-md overflow-x-auto border-t-4 border-stone-600">
-              <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-xl">Tabel Data Eviden SAKIP</h3><button onclick="loadGlobalData()" class="text-sm bg-stone-200 px-3 py-1 rounded shadow"><i class="fas fa-sync"></i> Refresh</button></div>
+            <div id="tab-data" class="tab-content hidden bg-white p-6 rounded shadow-md border-t-4 border-stone-600">
+              <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-xl">Tabel Eviden</h3><button onclick="loadGlobalData()" class="text-sm bg-stone-200 px-3 py-1 rounded shadow hover:bg-stone-300"><i class="fas fa-sync"></i> Refresh</button></div>
               
               <!-- Filters & Sort for Tabel Data -->
-              <div class="bg-stone-50 p-4 rounded-lg shadow-sm mb-4 flex flex-wrap gap-4 items-end border border-stone-200">
-                 <div class="flex-grow min-w-[200px]">
+              <div class="bg-stone-50 p-4 rounded-lg shadow-sm mb-4 flex flex-col md:flex-row flex-wrap gap-4 items-start md:items-end border border-stone-200">
+                 <div class="w-full md:w-auto md:flex-grow min-w-[200px]">
                     <label class="block text-xs font-bold text-stone-600 mb-1">Cari Eviden</label>
-                    <input type="text" id="flt-data-search" onkeyup="renderTableData()" placeholder="Ketik nama eviden..." class="border p-2 rounded text-sm w-full">
+                    <input type="text" id="flt-data-search" onkeyup="renderTableData()" placeholder="Ketik nama eviden..." class="border p-2 rounded text-sm w-full focus:ring-1 focus:ring-stone-500">
                  </div>
-                 <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">Tahun</label>
-                    <select id="flt-data-thn" onchange="renderTableData()" class="border p-2 rounded text-sm min-w-[100px]"><option value="ALL">Semua</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select>
-                 </div>
-                 <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">Status</label>
-                    <select id="flt-data-status" onchange="renderTableData()" class="border p-2 rounded text-sm min-w-[150px]">
-                       <option value="ALL">Semua Status</option>
-                       <option value="Verified">Sudah Diverifikasi</option>
-                       <option value="Sudah Upload">Sudah Upload</option>
-                       <option value="Ditolak">Ditolak</option>
-                       <option value="Permintaan">Permintaan / Belum Upload</option>
-                    </select>
-                 </div>
-                 <div id="filter-data-subbag-container">
-                    <label class="block text-xs font-bold text-stone-600 mb-1">Sub Bagian</label>
-                    <select id="flt-data-sub" onchange="renderTableData()" class="border p-2 rounded text-sm min-w-[120px]">
-                       <option value="ALL">Semua Subbag</option>
-                       <option value="kul">KUL</option>
-                       <option value="sdm_parmas">SDM & Parmas</option>
-                       <option value="tekhum">Tekhum</option>
-                       <option value="rendatin">Rendatin</option>
-                    </select>
-                 </div>
-                 <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">Urutkan</label>
-                    <select id="sort-data" onchange="renderTableData()" class="border p-2 rounded text-sm bg-stone-100">
-                       <option value="nama_asc">Nama Eviden (A-Z)</option>
-                       <option value="nama_desc">Nama Eviden (Z-A)</option>
-                       <option value="subbag_asc">Sub Bagian (A-Z)</option>
-                       <option value="tahun_desc">Tahun (Terbaru)</option>
-                       <option value="status_asc">Status (A-Z)</option>
-                    </select>
+                 <div class="w-full md:w-auto flex gap-4 overflow-x-auto pb-2 md:pb-0 w-full">
+                     <div>
+                        <label class="block text-xs font-bold text-stone-600 mb-1">Tahun</label>
+                        <select id="flt-data-thn" onchange="renderTableData()" class="border p-2 rounded text-sm min-w-[90px]"><option value="ALL">Semua</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select>
+                     </div>
+                     <div>
+                        <label class="block text-xs font-bold text-stone-600 mb-1">Status</label>
+                        <select id="flt-data-status" onchange="renderTableData()" class="border p-2 rounded text-sm min-w-[130px]">
+                           <option value="ALL">Semua</option>
+                           <option value="Verified">Terverifikasi</option>
+                           <option value="Sudah Upload">Diunggah</option>
+                           <option value="Ditolak">Ditolak</option>
+                           <option value="Permintaan">Belum</option>
+                        </select>
+                     </div>
+                     <div id="filter-data-subbag-container">
+                        <label class="block text-xs font-bold text-stone-600 mb-1">Sub Bagian</label>
+                        <select id="flt-data-sub" onchange="renderTableData()" class="border p-2 rounded text-sm min-w-[110px]">
+                           <option value="ALL">Semua</option>
+                           <option value="kul">KUL</option>
+                           <option value="sdm_parmas">SDM & Parmas</option>
+                           <option value="tekhum">Tekhum</option>
+                           <option value="rendatin">Rendatin</option>
+                        </select>
+                     </div>
+                     <div>
+                        <label class="block text-xs font-bold text-stone-600 mb-1">Urutkan</label>
+                        <select id="sort-data" onchange="renderTableData()" class="border p-2 rounded text-sm bg-stone-100 min-w-[130px]">
+                           <option value="nama_asc">Nama (A-Z)</option>
+                           <option value="nama_desc">Nama (Z-A)</option>
+                           <option value="subbag_asc">Subbag (A-Z)</option>
+                           <option value="tahun_desc">Tahun Baru</option>
+                           <option value="status_asc">Status</option>
+                        </select>
+                     </div>
                  </div>
               </div>
 
-              <table class="w-full text-left border-collapse text-sm">
-                <thead class="bg-stone-100"><th class="p-3 border">Tahun</th><th class="p-3 border">Subbag</th><th class="p-3 border">Eviden</th><th class="p-3 border">Deadline</th><th class="p-3 border">Waktu Unggah</th><th class="p-3 border">Status</th><th class="p-3 border text-center">Aksi</th></thead>
-                <tbody id="table-body"></tbody>
-              </table>
+              <div class="overflow-x-auto w-full">
+                  <table class="w-full text-left border-collapse text-sm min-w-[800px]">
+                    <thead class="bg-stone-100"><th class="p-3 border">Tahun</th><th class="p-3 border">Subbag</th><th class="p-3 border">Eviden</th><th class="p-3 border">Deadline</th><th class="p-3 border">Waktu Unggah</th><th class="p-3 border">Status</th><th class="p-3 border text-center">Aksi</th></thead>
+                    <tbody id="table-body"></tbody>
+                  </table>
+              </div>
             </div>
 
             <!-- TAB: PROFILE -->
             <div id="tab-profile" class="tab-content hidden bg-white p-6 rounded shadow-md border-t-4 border-stone-600">
                <div class="max-w-md bg-stone-50 p-4 rounded border mb-6">
                  <h4 class="font-bold mb-2">Ganti Password Sendiri</h4>
-                 <input type="password" id="new-password" class="w-full border p-2 rounded mb-4" placeholder="Password Baru">
-                 <button onclick="changePass()" class="bg-stone-800 text-white px-4 py-2 rounded shadow">Simpan Password</button>
+                 <input type="password" id="new-password" class="w-full border p-2 rounded mb-4 focus:ring-1 focus:ring-stone-500" placeholder="Password Baru">
+                 <button onclick="changePass()" class="bg-stone-800 hover:bg-stone-900 text-white px-4 py-2 rounded shadow w-full md:w-auto">Simpan Password</button>
                </div>
                
                <div id="admin-user-management" class="hidden border-t pt-6">
-                 <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-xl">Manajemen User</h3><button onclick="openUserModal('create')" class="bg-green-600 text-white px-3 py-1 rounded"><i class="fas fa-plus"></i> Tambah</button></div>
-                 <table class="w-full text-left text-sm"><thead class="bg-stone-200"><th class="p-2 border">User</th><th class="p-2 border">Nama</th><th class="p-2 border">Role</th><th class="p-2 border">Aksi</th></thead><tbody id="user-table-body"></tbody></table>
+                 <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-xl">Manajemen User</h3><button onclick="openUserModal('create')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded shadow"><i class="fas fa-plus"></i> Tambah User</button></div>
+                 <div class="overflow-x-auto">
+                     <table class="w-full text-left text-sm border-collapse min-w-[500px]"><thead class="bg-stone-200"><th class="p-2 border">User</th><th class="p-2 border">Nama</th><th class="p-2 border">Role</th><th class="p-2 border text-center">Aksi</th></thead><tbody id="user-table-body"></tbody></table>
+                 </div>
                </div>
             </div>
 
@@ -398,18 +409,18 @@
                  <h4 class="font-bold text-green-800 mb-2"><i class="fas fa-chart-pie"></i> Kirim Laporan Progres (Otomatis)</h4>
                  <p class="text-sm text-stone-600 mb-4">Sistem akan merekap dan mengirimkan informasi jumlah eviden yang terverifikasi, dalam proses, maupun belum selesai langsung ke WhatsApp operator bersangkutan.</p>
 
-                 <div class="flex items-center gap-4 mb-4">
+                 <div class="flex flex-col md:flex-row items-start md:items-center gap-4 mb-4">
                     <label class="font-bold text-sm text-stone-700">Pilih Tahun Data:</label>
-                    <select id="wa-progress-year" class="border p-2 rounded focus:outline-none focus:border-green-500">
+                    <select id="wa-progress-year" class="border p-2 rounded focus:outline-none focus:border-green-500 w-full md:w-32">
                        <option value="2024">2024</option>
                        <option value="2025">2025</option>
                        <option value="2026">2026</option>
                     </select>
                  </div>
 
-                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                     <button onclick="handleSendProgressWA('kul')" class="bg-white border border-green-500 text-green-700 hover:bg-green-500 hover:text-white px-3 py-2 rounded text-sm font-bold transition shadow-sm"><i class="fas fa-paper-plane"></i> Subbag KUL</button>
-                    <button onclick="handleSendProgressWA('sdm_parmas')" class="bg-white border border-green-500 text-green-700 hover:bg-green-500 hover:text-white px-3 py-2 rounded text-sm font-bold transition shadow-sm"><i class="fas fa-paper-plane"></i> Subbag SDM & Parmas</button>
+                    <button onclick="handleSendProgressWA('sdm_parmas')" class="bg-white border border-green-500 text-green-700 hover:bg-green-500 hover:text-white px-3 py-2 rounded text-sm font-bold transition shadow-sm"><i class="fas fa-paper-plane"></i> SDM & Parmas</button>
                     <button onclick="handleSendProgressWA('tekhum')" class="bg-white border border-green-500 text-green-700 hover:bg-green-500 hover:text-white px-3 py-2 rounded text-sm font-bold transition shadow-sm"><i class="fas fa-paper-plane"></i> Subbag Tekhum</button>
                     <button onclick="handleSendProgressWA('rendatin')" class="bg-white border border-green-500 text-green-700 hover:bg-green-500 hover:text-white px-3 py-2 rounded text-sm font-bold transition shadow-sm"><i class="fas fa-paper-plane"></i> Subbag Rendatin</button>
                  </div>
@@ -435,7 +446,7 @@
                       <label class="block text-sm font-bold text-stone-700 mb-2">Isi Pesan WhatsApp</label>
                       <textarea id="wa-message" rows="4" class="w-full border p-3 rounded focus:outline-none focus:border-green-500" placeholder="Ketik pesan yang akan di-broadcast di sini..." required></textarea>
                    </div>
-                   <button type="submit" class="bg-stone-700 hover:bg-stone-800 text-white px-6 py-2 rounded font-bold shadow transition"><i class="fas fa-comment-dots"></i> Kirim Pesan Manual</button>
+                   <button type="submit" class="bg-stone-700 hover:bg-stone-800 text-white px-6 py-2 rounded font-bold shadow transition w-full md:w-auto"><i class="fas fa-comment-dots"></i> Kirim Pesan Manual</button>
                  </form>
                </div>
             </div>
@@ -445,9 +456,19 @@
       </div>
     </main>
 
+    <!-- LOADING OVERLAY -->
+    <!-- Z-Index fix 99999 agar terjamin selalu tampil di atas -->
+    <div id="loading" class="hidden fixed inset-0 bg-stone-900 bg-opacity-60 flex justify-center items-center" style="z-index: 99999;">
+       <div class="flex flex-col items-center">
+          <div class="loader rounded-full border-4 border-t-4 border-stone-200 h-12 w-12"></div>
+          <p class="text-white mt-4 font-bold tracking-widest text-sm drop-shadow-md">MEMPROSES DATA...</p>
+       </div>
+    </div>
+
     <!-- CUSTOM GLOBAL MODAL (ALERT & CONFIRM) -->
-    <div id="custom-modal" class="hidden fixed inset-0 bg-stone-900 bg-opacity-75 backdrop-blur-sm flex justify-center items-center z-[100] transition-opacity">
-      <div class="bg-white rounded-lg p-6 w-full max-w-sm shadow-2xl transform transition-transform scale-100" id="custom-modal-box">
+    <!-- Z-Index fix 100000 agar tidak tertimpa overlay apapun -->
+    <div id="custom-modal" class="hidden fixed inset-0 bg-stone-900 bg-opacity-75 backdrop-blur-sm flex justify-center items-center transition-opacity" style="z-index: 100000;">
+      <div class="bg-white rounded-lg p-6 w-11/12 max-w-sm shadow-2xl transform transition-transform scale-100" id="custom-modal-box">
         <h3 id="custom-modal-title" class="font-bold text-lg mb-2 text-stone-800 flex items-center">
             Pemberitahuan
         </h3>
@@ -460,32 +481,32 @@
     </div>
 
     <!-- MODAL USER ADMIN -->
-    <div id="modal-user" class="hidden fixed inset-0 bg-stone-900 bg-opacity-75 flex justify-center items-center z-[70]">
-      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+    <div id="modal-user" class="hidden fixed inset-0 bg-stone-900 bg-opacity-75 flex justify-center items-center" style="z-index: 99998;">
+      <div class="bg-white rounded-lg p-6 w-11/12 max-w-md">
         <h3 id="modal-user-title" class="font-bold text-lg mb-4 border-b pb-2">Tambah User</h3>
         <form id="form-user" onsubmit="handleSaveUser(event)">
           <input type="hidden" id="user-action" name="action">
           <input type="hidden" id="old-username" name="oldUsername">
           
-          <div class="mb-3 flex items-center">
-             <label class="w-1/3 text-sm font-bold text-stone-600">Username</label>
-             <input type="text" id="input-u-username" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500" required>
+          <div class="mb-3 flex flex-col md:flex-row md:items-center">
+             <label class="w-full md:w-1/3 text-sm font-bold text-stone-600 mb-1 md:mb-0">Username</label>
+             <input type="text" id="input-u-username" class="w-full md:w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500" required>
           </div>
-          <div class="mb-3 flex items-center">
-             <label class="w-1/3 text-sm font-bold text-stone-600">Password</label>
-             <input type="text" id="input-u-password" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500" required>
+          <div class="mb-3 flex flex-col md:flex-row md:items-center">
+             <label class="w-full md:w-1/3 text-sm font-bold text-stone-600 mb-1 md:mb-0">Password</label>
+             <input type="text" id="input-u-password" class="w-full md:w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500" required>
           </div>
-          <div class="mb-3 flex items-center">
-             <label class="w-1/3 text-sm font-bold text-stone-600">Nama Lengkap</label>
-             <input type="text" id="input-u-nama" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500" required>
+          <div class="mb-3 flex flex-col md:flex-row md:items-center">
+             <label class="w-full md:w-1/3 text-sm font-bold text-stone-600 mb-1 md:mb-0">Nama Lengkap</label>
+             <input type="text" id="input-u-nama" class="w-full md:w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500" required>
           </div>
-          <div class="mb-3 flex items-center">
-             <label class="w-1/3 text-sm font-bold text-stone-600">No HP</label>
-             <input type="text" id="input-u-hp" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500">
+          <div class="mb-3 flex flex-col md:flex-row md:items-center">
+             <label class="w-full md:w-1/3 text-sm font-bold text-stone-600 mb-1 md:mb-0">No HP</label>
+             <input type="text" id="input-u-hp" class="w-full md:w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500">
           </div>
-          <div class="mb-4 flex items-center">
-             <label class="w-1/3 text-sm font-bold text-stone-600">Role</label>
-             <select id="input-u-role" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500">
+          <div class="mb-4 flex flex-col md:flex-row md:items-center">
+             <label class="w-full md:w-1/3 text-sm font-bold text-stone-600 mb-1 md:mb-0">Role</label>
+             <select id="input-u-role" class="w-full md:w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500">
                 <option value="superadmin">Superadmin</option>
                 <option value="komisioner">Komisioner</option>
                 <option value="kasubbag_kul">Kasubbag KUL</option>
@@ -508,33 +529,33 @@
     </div>
 
     <!-- MODAL EDIT EVIDEN (SUPERADMIN) -->
-    <div id="modal-edit-eviden" class="hidden fixed inset-0 bg-stone-900 bg-opacity-75 flex justify-center items-center z-[70]">
-      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+    <div id="modal-edit-eviden" class="hidden fixed inset-0 bg-stone-900 bg-opacity-75 flex justify-center items-center" style="z-index: 99998;">
+      <div class="bg-white rounded-lg p-6 w-11/12 max-w-md">
         <h3 class="font-bold text-lg mb-4 border-b pb-2">Edit Metadata Eviden</h3>
         <form id="form-edit-eviden" onsubmit="handleEditEviden(event)">
           <input type="hidden" id="edit-e-id">
           
-          <div class="mb-3 flex items-center">
-             <label class="w-1/3 text-sm font-bold text-stone-600">Tahun</label>
-             <select id="edit-e-tahun" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500">
+          <div class="mb-3 flex flex-col md:flex-row md:items-center">
+             <label class="w-full md:w-1/3 text-sm font-bold text-stone-600 mb-1 md:mb-0">Tahun</label>
+             <select id="edit-e-tahun" class="w-full md:w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500">
                 <option value="2024">2024</option>
                 <option value="2025">2025</option>
                 <option value="2026">2026</option>
                 <option value="2027">2027</option>
              </select>
           </div>
-          <div class="mb-3 flex items-center">
-             <label class="w-1/3 text-sm font-bold text-stone-600">Sub Bagian</label>
-             <select id="edit-e-subbagian" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500">
+          <div class="mb-3 flex flex-col md:flex-row md:items-center">
+             <label class="w-full md:w-1/3 text-sm font-bold text-stone-600 mb-1 md:mb-0">Sub Bagian</label>
+             <select id="edit-e-subbagian" class="w-full md:w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500">
                 <option value="kul">KUL</option>
                 <option value="sdm_parmas">SDM & Parmas</option>
                 <option value="tekhum">Tekhum</option>
                 <option value="rendatin">Rendatin</option>
              </select>
           </div>
-          <div class="mb-4 flex items-center">
-             <label class="w-1/3 text-sm font-bold text-stone-600">Nama Eviden</label>
-             <input type="text" id="edit-e-nama" class="w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500" required>
+          <div class="mb-4 flex flex-col md:flex-row md:items-center">
+             <label class="w-full md:w-1/3 text-sm font-bold text-stone-600 mb-1 md:mb-0">Nama Eviden</label>
+             <input type="text" id="edit-e-nama" class="w-full md:w-2/3 border p-2 rounded focus:outline-none focus:border-orange-500" required>
           </div>
 
           <div class="flex justify-end gap-2 pt-4 border-t border-stone-200">
@@ -550,15 +571,27 @@
       // ==========================================
       // URL BACKEND GOOGLE APPS SCRIPT ANDA
       // ==========================================
-      const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz2ZAhZoHK2X_hiAyoXbJgSA9tPhfyZtw4ejtLHWG8dPAYVY6txFkztWhqGdXI9bBTI/exec"; // GANTI TEKS INI DENGAN URL WEB APP GAS ANDA
+      const GAS_WEB_APP_URL = https://script.google.com/macros/s/AKfycbz2ZAhZoHK2X_hiAyoXbJgSA9tPhfyZtw4ejtLHWG8dPAYVY6txFkztWhqGdXI9bBTI/exec; // GANTI TEKS INI DENGAN URL WEB APP GAS ANDA
       // ==========================================
 
       let currentUser = null, currentRole = null;
       let globalEvidenData = [];
       let charts = {};
 
+      // FUNGSI PENGAMANAN LOCAL STORAGE (Mencegah Iframe Crash)
+      function safeSetStorage(key, value) {
+          try { localStorage.setItem(key, value); } catch(e) { console.warn("Storage ditolak oleh sistem keamanan browser"); }
+      }
+      function safeGetStorage(key) {
+          try { return localStorage.getItem(key); } catch(e) { return null; }
+      }
+      function safeRemoveStorage(key) {
+          try { localStorage.removeItem(key); } catch(e) {}
+      }
+
       window.onload = function() { 
-          const savedSession = localStorage.getItem('sisolah_session');
+          // Menggunakan Safe Storage agar script tidak mati jika cookies/storage diblokir (Sering terjadi di Iframe Apps Script)
+          const savedSession = safeGetStorage('sisolah_session');
           if(savedSession) {
               try {
                   const res = JSON.parse(savedSession);
@@ -578,7 +611,9 @@
          document.getElementById('custom-modal-title').innerText = title;
          document.getElementById('custom-modal-message').innerText = message;
          document.getElementById('custom-modal-btn-cancel').classList.add('hidden');
-         document.getElementById('custom-modal-btn-ok').innerText = "OK";
+         
+         const okBtn = document.getElementById('custom-modal-btn-ok');
+         okBtn.innerText = "OK";
          
          let iconHTML = '';
          if(type === 'error') iconHTML = '<i class="fas fa-exclamation-circle text-red-500 mr-2 text-xl"></i>';
@@ -588,10 +623,11 @@
          
          document.getElementById('custom-modal-title').innerHTML = iconHTML + title;
 
-         const okBtn = document.getElementById('custom-modal-btn-ok');
+         // Me-rebuild Listener agar tidak duplicate & 100% dapat di-klik
          const newOkBtn = okBtn.cloneNode(true);
          okBtn.parentNode.replaceChild(newOkBtn, okBtn);
-         newOkBtn.onclick = () => document.getElementById('custom-modal').classList.add('hidden');
+         newOkBtn.onclick = function() { document.getElementById('custom-modal').classList.add('hidden'); };
+         
          document.getElementById('custom-modal').classList.remove('hidden');
       }
 
@@ -599,11 +635,11 @@
          document.getElementById('custom-modal-title').innerText = title;
          document.getElementById('custom-modal-message').innerText = message;
          document.getElementById('custom-modal-btn-cancel').classList.remove('hidden');
-         document.getElementById('custom-modal-btn-ok').innerText = "Ya, Lanjutkan";
          document.getElementById('custom-modal-title').innerHTML = '<i class="fas fa-question-circle text-orange-500 mr-2 text-xl"></i>' + title;
 
          const okBtn = document.getElementById('custom-modal-btn-ok');
          const cancelBtn = document.getElementById('custom-modal-btn-cancel');
+         okBtn.innerText = "Ya, Lanjutkan";
          
          const newOkBtn = okBtn.cloneNode(true);
          okBtn.parentNode.replaceChild(newOkBtn, okBtn);
@@ -615,7 +651,8 @@
             document.getElementById('custom-modal').classList.add('hidden');
             if(typeof onConfirmCallback === 'function') onConfirmCallback();
          };
-         newCancelBtn.onclick = () => document.getElementById('custom-modal').classList.add('hidden');
+         newCancelBtn.onclick = function() { document.getElementById('custom-modal').classList.add('hidden'); };
+         
          document.getElementById('custom-modal').classList.remove('hidden');
       }
 
@@ -671,14 +708,28 @@
       }
 
       // ==========================================
-      // UI NAVIGATION LOGIC
+      // UI NAVIGATION LOGIC & MOBILE RESPONSIVE
       // ==========================================
-      function toggleSidebar() { document.getElementById('sidebar').classList.toggle('sidebar-collapsed'); }
+      function toggleSidebar() { 
+          const sb = document.getElementById('sidebar');
+          // Mode layar kecil (HP) pakai mode Slide
+          if (window.innerWidth < 768) {
+              sb.classList.toggle('-translate-x-full');
+          } else {
+          // Mode layar besar pakai mode penciutan menu
+              sb.classList.toggle('sidebar-collapsed');
+          }
+      }
 
       function highlightMenu(id) {
          document.querySelectorAll('#sidebar a').forEach(el => { el.classList.remove('bg-stone-700', 'border-orange-500'); el.classList.add('border-transparent'); });
          const activeEl = document.getElementById('menu-' + id);
          if(activeEl) { activeEl.classList.add('bg-stone-700', 'border-orange-500'); activeEl.classList.remove('border-transparent'); }
+         
+         // Jika navigasi di-klik di HP, sembunyikan sidebar secara otomatis agar tidak menutupi layar konten utama
+         if (window.innerWidth < 768) {
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+         }
       }
 
       function showPage(id) {
@@ -734,7 +785,7 @@
           .then(res => {
               setLoading(false);
               if (res.status === 'success') {
-                localStorage.setItem('sisolah_session', JSON.stringify(res));
+                safeSetStorage('sisolah_session', JSON.stringify(res)); // Menggunakan Safe Storage
                 setLoginState(res);
                 showPage('page-home');
               } else { showAlert('Gagal Login', res.message, 'error'); }
@@ -799,7 +850,7 @@
       }
 
       function logout() {
-        localStorage.removeItem('sisolah_session');
+        safeRemoveStorage('sisolah_session'); // Safe Remove
         currentUser = null; currentRole = null; globalEvidenData = [];
         document.getElementById('sidebar-user-info').classList.add('hidden');
         document.getElementById('menu-login').classList.remove('hidden');
@@ -1103,4 +1154,214 @@
         document.getElementById('upload-target-name').innerText = nama;
         
         const deadlineInfo = document.getElementById('upload-deadline-info');
-        if (deadline && deadline !== '-') {
+        if (deadline && deadline !== '-') { deadlineInfo.classList.remove('hidden'); document.getElementById('upload-target-deadline').innerText = deadline; } 
+        else { deadlineInfo.classList.add('hidden'); }
+      }
+
+      function handleUpload(e) {
+        e.preventDefault();
+        const file = document.getElementById('file-eviden').files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          const formObject = Object.fromEntries(new FormData(document.getElementById('form-upload')).entries());
+          formObject.tahun_sakip = document.getElementById('input-tahun').value;
+          formObject.sub_bagian = document.getElementById('input-subbagian').value;
+
+          const fileData = { filename: file.name, mimeType: file.type, bytes: ev.target.result.split(',')[1] };
+          setLoading(true);
+          callBackendAPI('uploadEvidence', { formObject: formObject, fileData: fileData, userRole: currentRole })
+            .then(res => {
+              showAlert('Pemberitahuan', res.message, res.status === 'success' ? 'success' : 'error');
+              document.getElementById('form-upload').reset();
+              document.getElementById('upload-instruction').classList.add('hidden');
+              document.getElementById('input-tahun').disabled = false;
+              document.getElementById('input-subbagian').disabled = false;
+              document.getElementById('input-nama-eviden').readOnly = false;
+              loadGlobalData();
+              showTab('tab-data');
+            }).catch(handleSystemError);
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function handleRequest(e) {
+        e.preventDefault();
+        const formObj = Object.fromEntries(new FormData(e.target).entries());
+        setLoading(true);
+        callBackendAPI('requestEvidence', { formObject: formObj })
+          .then(res => { showAlert('Pemberitahuan', res.message, res.status === 'success' ? 'success' : 'error'); e.target.reset(); loadGlobalData(); }).catch(handleSystemError);
+      }
+
+      // ==========================================
+      // WHATSAPP
+      // ==========================================
+      function handleSendManualWA(e) {
+         e.preventDefault();
+         const targetSub = document.getElementById('wa-target').value;
+         const message = document.getElementById('wa-message').value;
+
+         showConfirm('Konfirmasi Kirim', 'Anda yakin ingin mengirim pesan WhatsApp ini secara manual?', async () => {
+             setLoading(true);
+             try {
+                 const users = await callBackendAPI('getAllUsers', {});
+                 let targets = [];
+                 users.forEach(u => {
+                     let role = String(u[4]).toLowerCase(); let hp = String(u[3]).trim();
+                     if (hp && hp !== '-' && hp !== '') {
+                         if (targetSub === 'all' && role.includes('operator')) targets.push(hp);
+                         else if (targetSub !== 'all' && role.includes(targetSub.replace('_', ''))) targets.push(hp);
+                     }
+                 });
+                 if (targets.length === 0) { setLoading(false); showAlert('Peringatan', 'Gagal: Tidak ada Nomor HP terdaftar.', 'warning'); return; }
+                 const result = await sendFonnteDirectly(targets, message);
+                 setLoading(false);
+                 showAlert('Pemberitahuan', result.message, result.status === 'success' ? 'success' : 'error');
+                 if (result.status === 'success') document.getElementById('form-wa').reset();
+             } catch (error) { handleSystemError(error); }
+         });
+      }
+
+      function handleSendProgressWA(subbagian) {
+         const year = document.getElementById('wa-progress-year').value;
+         let subName = subbagian.toUpperCase().replace('_', ' & ');
+
+         showConfirm('Konfirmasi Broadcast', `Kirim Laporan Progres SAKIP Tahun ${year} ke WhatsApp operator Sub Bagian ${subName}?`, async () => {
+             setLoading(true);
+             try {
+                 let stats = { total: 0, verified: 0, proses: 0, belum: 0 };
+                 let listPerluUpload = [];
+                 let listPerluVerifikasi = [];
+
+                 globalEvidenData.forEach(row => {
+                     let rowYear = row[1]; let rowSub = String(row[3]).toLowerCase(); let namaEviden = row[2]; let status = row[8];
+                     if (rowYear.toString() === year.toString() && rowSub === subbagian) {
+                         stats.total++;
+                         if (status === 'Verified') { stats.verified++; } 
+                         else if (status === 'Sudah Upload' || status === 'Pending') { stats.proses++; listPerluVerifikasi.push(namaEviden); } 
+                         else { stats.belum++; listPerluUpload.push(namaEviden); }
+                     }
+                 });
+
+                 if (stats.total === 0) { setLoading(false); showAlert('Peringatan', `Tidak ada data eviden untuk ${subName} pada tahun ${year}.`, 'warning'); return; }
+
+                 let message = `*[LAPORAN PROGRES SAKIP]*\n`;
+                 message += `Tahun: ${year}\n`;
+                 message += `Sub Bagian: ${subName}\n\n`;
+                 message += `📊 *Ringkasan Status:*\n`;
+                 message += `- Total Eviden: ${stats.total}\n`;
+                 message += `- ✅ Terverifikasi: ${stats.verified}\n`;
+                 message += `- ⏳ Proses Upload/Review: ${stats.proses}\n`;
+                 message += `- ❌ Belum/Ditolak: ${stats.belum}\n\n`;
+                 
+                 if (listPerluUpload.length > 0 || listPerluVerifikasi.length > 0) {
+                     message += `📝 *Daftar Eviden Perlu Tindak Lanjut:*\n`;
+                     if (listPerluUpload.length > 0) {
+                         message += `\n*Perlu Diunggah / Ditolak:*\n`;
+                         listPerluUpload.forEach((item, index) => { message += `${index + 1}. ${item}\n`; });
+                     }
+                     if (listPerluVerifikasi.length > 0) {
+                         message += `\n*Menunggu Verifikasi Kasubbag:*\n`;
+                         listPerluVerifikasi.forEach((item, index) => { message += `${index + 1}. ${item}\n`; });
+                     }
+                     message += `\n`;
+                 }
+
+                 message += `Mohon segera menindaklanjuti eviden yang masih berstatus proses atau belum selesai.\nTerima kasih.`;
+
+                 const users = await callBackendAPI('getAllUsers', {});
+                 let targets = [];
+                 users.forEach(u => {
+                    let role = String(u[4]).toLowerCase(); let hp = String(u[3]).trim();
+                    if (hp && hp !== '-' && hp !== '') { if (role.includes(subbagian.replace('_', ''))) targets.push(hp); }
+                 });
+
+                 if (targets.length === 0) { setLoading(false); showAlert('Peringatan', `Gagal: Tidak ada Nomor HP terdaftar untuk Sub Bagian ${subName}.`, 'warning'); return; }
+
+                 const result = await sendFonnteDirectly(targets, message);
+                 setLoading(false);
+                 showAlert('Pemberitahuan', result.message, result.status === 'success' ? 'success' : 'error');
+             } catch (error) { handleSystemError(error); }
+         });
+      }
+
+      // ==========================================
+      // USER MANAGEMENT & EDIT EVIDEN METADATA
+      // ==========================================
+      function loadUsers() {
+        callBackendAPI('getAllUsers', {})
+          .then(users => {
+            const tbody = document.getElementById('user-table-body'); 
+            tbody.innerHTML = '';
+            users.forEach(u => {
+               const safeUser = JSON.stringify(u).replace(/"/g, '&quot;'); 
+               let editBtn = '';
+               if(currentRole === 'superadmin') editBtn = `<button onclick="openUserModal('update', ${safeUser})" class="text-blue-600 hover:text-blue-800"><i class="fas fa-edit"></i></button>`;
+               tbody.innerHTML += `<tr class="border-b"><td class="p-2">${u[0]}</td><td class="p-2">${u[2]}</td><td class="p-2">${u[4]}</td><td class="p-2 flex gap-2">${editBtn}<button onclick="deleteUser('${u[0]}')" class="text-red-600 hover:text-red-800"><i class="fa fa-trash"></i></button></td></tr>`;
+            });
+          }).catch(handleSystemError);
+      }
+
+      function openUserModal(mode, data = null) { 
+        document.getElementById('modal-user').classList.remove('hidden'); 
+        document.getElementById('form-user').reset();
+        
+        if (mode === 'update' && data) {
+            document.getElementById('modal-user-title').innerText = "Edit User";
+            document.getElementById('user-action').value = 'update';
+            document.getElementById('old-username').value = data[0];
+            document.getElementById('input-u-username').value = data[0];
+            document.getElementById('input-u-password').value = data[1];
+            document.getElementById('input-u-nama').value = data[2];
+            document.getElementById('input-u-hp').value = data[3];
+            document.getElementById('input-u-role').value = data[4];
+        } else {
+            document.getElementById('modal-user-title').innerText = "Tambah User";
+            document.getElementById('user-action').value = 'create';
+            document.getElementById('old-username').value = '';
+        }
+      }
+
+      function handleSaveUser(e) { 
+        e.preventDefault(); 
+        const action = document.getElementById('user-action').value;
+        const oldUser = document.getElementById('old-username').value;
+        const u={ username:document.getElementById('input-u-username').value, password:document.getElementById('input-u-password').value, nama:document.getElementById('input-u-nama').value, hp:document.getElementById('input-u-hp').value, role:document.getElementById('input-u-role').value }; 
+        setLoading(true);
+        callBackendAPI('manageUser', { actionType: action, userData: u, oldUsername: oldUser })
+          .then(res => { setLoading(false); showAlert('Pemberitahuan', res.message, res.status === 'success' ? 'success' : 'error'); if(res.status === 'success') { document.getElementById('modal-user').classList.add('hidden'); loadUsers(); } }).catch(handleSystemError);
+      }
+
+      function deleteUser(user) { 
+        showConfirm('Konfirmasi Hapus', 'Apakah Anda yakin ingin menghapus User ini?', () => {
+            setLoading(true);
+            callBackendAPI('manageUser', { actionType: 'delete', userData: null, oldUsername: user })
+              .then(res => { setLoading(false); showAlert('Pemberitahuan', res.message, res.status === 'success' ? 'success' : 'error'); loadUsers(); }).catch(handleSystemError);
+        });
+      }
+
+      function openEditEvidenModal(id, tahun, subbag, nama) {
+        document.getElementById('modal-edit-eviden').classList.remove('hidden');
+        document.getElementById('edit-e-id').value = id;
+        document.getElementById('edit-e-tahun').value = tahun;
+        document.getElementById('edit-e-subbagian').value = subbag;
+        const txt = document.createElement("textarea"); txt.innerHTML = nama;
+        document.getElementById('edit-e-nama').value = txt.value;
+      }
+
+      function handleEditEviden(e) {
+        e.preventDefault();
+        const id = document.getElementById('edit-e-id').value;
+        const newData = { tahun_sakip: document.getElementById('edit-e-tahun').value, sub_bagian: document.getElementById('edit-e-subbagian').value, nama_eviden: document.getElementById('edit-e-nama').value };
+        setLoading(true);
+        callBackendAPI('updateEvidenceData', { id: id, newData: newData, operator: currentUser })
+          .then(res => {
+              setLoading(false);
+              if(res.status === 'success') { showAlert('Berhasil', res.message, 'success'); document.getElementById('modal-edit-eviden').classList.add('hidden'); loadGlobalData(); } 
+              else { showAlert('Gagal', res.message, 'error'); }
+          }).catch(handleSystemError);
+      }
+    </script>
+  </body>
+</html>
